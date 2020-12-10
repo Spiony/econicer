@@ -1,0 +1,13 @@
+{
+	"groups": {
+		"income": ["company"],
+		"living": ["rent", "electricity"],
+		"mobility": ["car"],
+		"travel": ["hotel"],
+		"cash": ["cash"],
+		"shopping": ["amazon", "paypal"],
+		"hobby": ["guitar"]
+	},
+	"dbidentifier": ["customer", "usage"]
+}
+

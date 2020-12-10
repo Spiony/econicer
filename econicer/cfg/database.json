@@ -1,0 +1,19 @@
+{
+	"delimiter": "\t",
+	"owner": 3,
+	"accountNumber": 4,
+	"bank": 5,
+	"beginTable": 11,
+	"table": [
+		"date",
+		"valtua",
+		"customer",
+		"type",
+		"usage",
+		"saldo",
+		"saldoCurrency",
+		"value",
+		"valueCurrency",
+		"groupID"
+	]
+}

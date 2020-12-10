@@ -1,0 +1,50 @@
+
+axes.titlesize : 10
+axes.labelsize : 10
+axes.grid : on
+#                         Glumt  Blue,                       Red,                      Green,                    Blue,                    Yellow,                      Dark Green,                Dark Blue,           Purple
+axes.prop_cycle: cycler('color',[(0/255, 160/255, 170/255), (210/255, 10/255, 0/255), (25/255, 250/255, 0/255), (40/255, 10/255, 225/255), (177/255, 200/255, 0/255), (10/255, 170/255, 0/255), (10/255, 90/255, 90/255)])
+
+
+lines.markersize : 10
+lines.linewidth   : 1.0     # line width in points
+lines.linestyle   : -       # solid line
+
+
+#figure.autolayout : True
+
+
+xtick.labelsize : 10
+xtick.direction : in
+
+
+ytick.labelsize : 10
+ytick.direction : in
+
+
+### GRIDS
+#grid.color      :   000000    # grid color
+grid.linestyle   :   :         # solid
+grid.linewidth   :   0.5       # in points
+grid.alpha       :   0.5       # transparency, between 0.0 and 1.0
+
+
+### Legend
+legend.loc           : best
+legend.frameon       : True     # if True, draw the legend on a background patch
+legend.framealpha    : 1.0     # legend patch transparency
+legend.facecolor     : white  # inherit from axes.facecolor; or color spec
+legend.edgecolor     : 0.0      # background patch boundary color
+legend.fancybox      : False     # if True, use a rounded box for the
+                                 # legend background, else a rectangle
+legend.borderaxespad : 0.50    # the border between the axes and legend edge
+
+
+font.family         : Arial
+font.serif         : Times, Palatino, New Century Schoolbook, Bookman, Computer Modern Roman
+font.sans-serif    : Bahnschrift, Helvetica, Avant Garde, Computer Modern Sans serif
+font.cursive       : lmodern:  #Zapf Chancery
+font.monospace     : Courier, Computer Modern Typewriter
+
+
+text.usetex        : false
