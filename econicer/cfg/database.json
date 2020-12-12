@@ -1,9 +1,10 @@
 {
-	"delimiter": "\t",
+	"delimiter": ";",
 	"owner": 3,
 	"accountNumber": 4,
 	"bank": 5,
 	"beginTable": 11,
+	"dateFormat": "%d.%m.%Y",
 	"table": [
 		"date",
 		"valtua",
