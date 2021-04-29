@@ -13,31 +13,36 @@ from econicer.auxiliary import endOfYear
 plt.style.use(os.path.join(os.path.dirname(__file__), "glumt.mplrc"))
 
 
-def plotTimeline(acc):
-    timeline = acc.transactions[["date", "saldo"]]
+def plotTimeline(plotDir, transactions):
+    timeline = transactions[["date", "saldo"]]
     timeline = timeline.iloc[::-1]
 
     fig = plt.figure()
-    ax = fig.add_subplot(111)
-    timeline.plot(x="date", y="saldo", ax=ax)
+    fig.add_subplot(111)
+    plt.step(x=timeline["date"], y=timeline["saldo"])
+    plt.ylabel("saldo / EUR")
 
-    filename = Path(acc.settings["plotDir"]) / "ecoTimeline.png"
+    filename = Path(plotDir) / "ecoTimeline.png"
     fig.savefig(filename)
     plt.close(fig)
     # add timeDelta for plot separation
 
 
 def calcPosNegSums(df):
-    posSum = pd.pivot_table(df,
-                            index=df['date'].dt.month,
-                            columns=df['date'].dt.year,
-                            values='value',
-                            aggfunc=lambda x: x[x > 0].sum())
-    negSum = pd.pivot_table(df,
-                            index=df['date'].dt.month,
-                            columns=df['date'].dt.year,
-                            values='value',
-                            aggfunc=lambda x: x[x < 0].sum())
+    posSum = pd.pivot_table(
+        df,
+        index=df['date'].dt.month,
+        columns=df['date'].dt.year,
+        values='value',
+        aggfunc=lambda x: x[x > 0].sum()
+    )
+    negSum = pd.pivot_table(
+        df,
+        index=df['date'].dt.month,
+        columns=df['date'].dt.year,
+        values='value',
+        aggfunc=lambda x: x[x < 0].sum()
+    )
     posSum = posSum.rename_axis("month")
     posSum = posSum.rename_axis("year", axis="columns")
     negSum = negSum.rename_axis("month")
@@ -46,8 +51,8 @@ def calcPosNegSums(df):
     return posSum, negSum
 
 
-def plotYearlyBarTotal(acc):
-    df = acc.transactions
+def plotYearlyBarTotal(plotDir, transactions):
+    df = transactions
     posSum, negSum = calcPosNegSums(df)
 
     fig = plt.figure()
@@ -57,14 +62,14 @@ def plotYearlyBarTotal(acc):
                        axis=1)
     yearDF.plot.bar(ax=ax)
     #ax.set_ylim([minSaldo*1.1, maxSaldo*1.1])
-    filename = Path(acc.settings["plotDir"]) / "ecoYearTotal.png"
+    filename = Path(plotDir) / "ecoYearTotal.png"
     fig.savefig(filename)
     plt.close(fig)
 
 
-def plotYearlyBar(acc):
+def plotYearlyBar(plotDir, transactions):
     """Show total in and out per month over a year"""
-    df = acc.transactions
+    df = transactions
     posSum, negSum = calcPosNegSums(df)
 
     minSaldo = negSum.min().min()
@@ -79,52 +84,56 @@ def plotYearlyBar(acc):
             axis=1)
         yearDF.plot.bar(ax=ax)
         ax.set_ylim([minSaldo * 1.1, maxSaldo * 1.1])
-        filename = Path(acc.settings["plotDir"]) / f"ecoYearTest{y}.png"
+        filename = Path(plotDir) / f"ecoYearTest{y}.png"
         fig.savefig(filename)
         plt.close(fig)
 
 
-def plotPie(acc):
+def plotPie(plotDir, transactions):
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    d = acc.transactions['group'].value_counts()
+    d = transactions['groupID'].value_counts()
     # sum all neg and pos; subplot for both
-    d = acc.transactions.pivot_table(
-        index=["group"], aggfunc={"value": lambda x: np.sum(np.abs(x))})
+    d = transactions.pivot_table(
+        index=["groupID"], aggfunc={"value": lambda x: np.sum(np.abs(x))})
     d.plot.pie(y="value", figsize=(5, 5), ax=ax)
-    filename = Path(acc.settings["plotDir"]) / "ecoPie.png"
+    filename = Path(plotDir) / "ecoPie.png"
     fig.savefig(filename)
     plt.close(fig)
 
 
-def plotBar(acc):
+def plotBar(plotDir, transactions):
 
-    absGroupVal = acc.transactions.pivot_table(values=["value"],
-                                               index=["group"],
-                                               aggfunc={"value": np.sum})
+    absGroupVal = transactions.pivot_table(
+        values=["value"],
+        index=["groupID"],
+        aggfunc={"value": np.sum}
+    )
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     absGroupVal.plot.barh(y="value", ax=ax)
-    filename = Path(acc.settings["plotDir"]) / "ecoNettoHbarTotal.png"
+    filename = Path(plotDir) / "ecoNettoHbarTotal.png"
     fig.savefig(filename)
     plt.close(fig)
 
 
-def plotBarYearly(acc):
+def plotBarYearly(plotDir, transactions):
 
-    df = acc.transactions
-    yearTrans = pd.pivot_table(df,
-                               index=df['date'].dt.year,
-                               columns=df['group'],
-                               values='value',
-                               aggfunc=np.sum)
+    df = transactions
+    yearTrans = pd.pivot_table(
+        df,
+        index=df['date'].dt.year,
+        columns=df['groupID'],
+        values='value',
+        aggfunc=np.sum
+    )
 
     years = yearTrans.index
     for y in years:
         fig = plt.figure()
         ax = fig.add_subplot(111)
         yearTrans.loc[y, :].plot.barh(y="value", ax=ax)
-        filename = Path(acc.settings["plotDir"]) / f"ecoNettoHbar{y}.png"
+        filename = Path(plotDir) / f"ecoNettoHbar{y}.png"
         fig.savefig(filename)
         plt.close(fig)
