@@ -1,0 +1,22 @@
+{
+	"groups": {
+		"income": [
+			"myCompany"
+		],
+		"living": [
+			"rent",
+			"Store"
+		],
+		"mobility": [
+			"gas station",
+			"taxi"
+		],
+		"hobby": [
+			"Book Store"
+		]
+	},
+	"dbIdentifier": [
+		"customer",
+		"usage"
+	]
+}
