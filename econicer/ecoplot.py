@@ -21,6 +21,7 @@ def plotTimeline(plotDir, transactions):
     fig.add_subplot(111)
     plt.step(x=timeline["date"], y=timeline["saldo"])
     plt.ylabel("saldo / EUR")
+    plt.xlabel("date / -")
 
     filename = Path(plotDir) / "ecoTimeline.png"
     fig.savefig(filename)
@@ -61,6 +62,7 @@ def plotYearlyBarTotal(plotDir, transactions):
                         negSum.sum().rename('out')],
                        axis=1)
     yearDF.plot.bar(ax=ax)
+    plt.ylabel("summation / EUR")
     #ax.set_ylim([minSaldo*1.1, maxSaldo*1.1])
     filename = Path(plotDir) / "ecoYearTotal.png"
     fig.savefig(filename)
@@ -84,6 +86,7 @@ def plotYearlyBar(plotDir, transactions):
             axis=1)
         yearDF.plot.bar(ax=ax)
         ax.set_ylim([minSaldo * 1.1, maxSaldo * 1.1])
+        plt.ylabel("summation / EUR")
         filename = Path(plotDir) / f"ecoYearTest{y}.png"
         fig.savefig(filename)
         plt.close(fig)
@@ -97,6 +100,7 @@ def plotPie(plotDir, transactions):
     d = transactions.pivot_table(
         index=["groupID"], aggfunc={"value": lambda x: np.sum(np.abs(x))})
     d.plot.pie(y="value", figsize=(5, 5), ax=ax)
+    plt.ylabel("cash flow")
     filename = Path(plotDir) / "ecoPie.png"
     fig.savefig(filename)
     plt.close(fig)
@@ -113,6 +117,7 @@ def plotBar(plotDir, transactions):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     absGroupVal.plot.barh(y="value", ax=ax)
+    plt.xlabel("summation / EUR")
     filename = Path(plotDir) / "ecoNettoHbarTotal.png"
     fig.savefig(filename)
     plt.close(fig)
@@ -134,6 +139,7 @@ def plotBarYearly(plotDir, transactions):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         yearTrans.loc[y, :].plot.barh(y="value", ax=ax)
+        plt.xlabel("summation / EUR")
         filename = Path(plotDir) / f"ecoNettoHbar{y}.png"
         fig.savefig(filename)
         plt.close(fig)
