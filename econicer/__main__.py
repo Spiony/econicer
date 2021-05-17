@@ -3,19 +3,11 @@ import sys
 from pathlib import Path
 
 from econicer.accountManager import AccountManager
-from econicer.report import reportByYear
 from econicer.settings import EconicerSettings
 
 
 def main():
 
-    DEBUG = True
-
-    #class formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter): pass
-    class formatter(argparse.RawDescriptionHelpFormatter):
-        pass
-
-    # define args
     parser = argparse.ArgumentParser(
         description=""
         "   ___  _________  ____  __________  ____\n"
@@ -23,10 +15,8 @@ def main():
         " /  __/ /__/ /_/ / / / / / /__/  __/ /\n"
         " \___/\___/\____/_/ /_/_/\___/\___/_/\n\n"
         " a perception of economic success",
-        formatter_class=formatter)
-    # positional args
+        formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    # optional args
     parser.add_argument(
         "-i",
         "--init",
@@ -51,14 +41,14 @@ def main():
         "-s",
         "--search",
         metavar="KEYWORD",
-        help="Search for specified keyword",
+        help="Search for specified keyword in category 'usage' and lists sum of expanses",
         default=""
     )
     parser.add_argument(
         "-k",
         "--category",
         metavar="CATEGORY",
-        help="Category to search in",
+        help="Categories to search in",
         nargs="+"
     )
     parser.add_argument(
@@ -77,6 +67,12 @@ def main():
         "-n",
         "--listNoGroup",
         help="List all transactions withou group",
+        action="store_true"
+    )
+    parser.add_argument(
+        "-u",
+        "--undo",
+        help="Undo last change on database",
         action="store_true"
     )
     parser.add_argument(
@@ -103,7 +99,7 @@ def main():
     if len(sys.argv) == 1:
         # display help message when no args are passed.
         parser.print_help()
-        sys.exit(1)
+        sys.exit()
 
     # Path objects to database and settings file
     db = Path.cwd() / ".db"
@@ -146,6 +142,11 @@ def main():
         ecoSettings.write()
         exit()
 
+    if args.undo:
+        accountMan = AccountManager()
+        accountMan.undo()
+        exit()
+
     # Add file to account history
     if args.add:
         accountMan = AccountManager()
@@ -162,7 +163,6 @@ def main():
     if args.listNoGroup:
         accountMan = AccountManager()
         accountMan.listNoGroups(args.category)
-
         exit()
 
     # list all transactions in current account without group
@@ -183,9 +183,11 @@ def main():
         accountMan.createPlots()
         exit()
 
-    # print report for year data
+    # print report for all account data
     if args.report:
-        raise NotImplementedError("Reports will be implemented.")
+        accountMan = AccountManager()
+        accountMan.createReport()
+        exit()
 
 
 if __name__ == "__main__":

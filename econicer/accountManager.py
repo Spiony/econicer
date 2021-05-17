@@ -1,19 +1,22 @@
-import pprint
 import re
+import shutil
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from econicer.account import BankAccount
+from econicer.ecoplot import Ecoplot
 from econicer.fileIO import FileIO
+from econicer.report import ReportDocument
 from econicer.settings import BankFileSettings
 from econicer.settings import DatabaseSettings
 from econicer.settings import EconicerSettings
 from econicer.settings import GroupSettings
-from econicer import ecoplot
 
-pp = pprint.PrettyPrinter(indent=4)
+
+def printSum(transactionDataframe):
+    print(f"\n Sum of expanses: {transactionDataframe.value.sum():.2f}")
 
 
 class AccountManager:
@@ -47,6 +50,8 @@ class AccountManager:
 
     def update(self, filepath):
 
+        self.makeBackup()
+
         updateFile = FileIO(filepath, self.bankSettings)
         updateAcc = updateFile.readDB(self.groupSettings)
         # updateAcc.groupTransactions()
@@ -68,7 +73,17 @@ class AccountManager:
 
         dbFile.writeDB(dbAcc)
 
+    def makeBackup(self):
+        undoFile = f"{self.settings.currentAccountFile}.old"
+        shutil.copy2(self.settings.currentAccountFile, undoFile)
+
+    def undo(self):
+        undoFile = f"{self.settings.currentAccountFile}.old"
+        shutil.copy2(undoFile, self.settings.currentAccountFile)
+
     def regroup(self):
+        self.makeBackup()
+
         dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
         dbAcc = dbFile.readDB(self.groupSettings)
         dbAcc.groupTransactions()
@@ -96,17 +111,18 @@ class AccountManager:
         dbAcc = dbFile.readDB(self.groupSettings)
 
         transFiltered = dbAcc.transactions[dbAcc.transactions["groupID"] == group]
-        pp.pprint(transFiltered)
+        print(transFiltered)
+        printSum(transFiltered)
 
     def search(self, search, category):
-        print(search, category)
-
         keyword = fr"({search})"
 
         if category is None:
             categories = ["usage"]
         else:
             categories = category
+
+        print(f"Seaching for {search} in {categories}")
 
         dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
         dbAcc = dbFile.readDB(self.groupSettings)
@@ -122,7 +138,7 @@ class AccountManager:
             ids = np.unique(ids)
             trans = dbAcc.transactions.loc[ids, :]
             print(trans)
-            print(f"\n Sum of expanses: {trans.value.sum():.2f}")
+            printSum(trans)
         else:
             print("Could not find any matches")
 
@@ -137,9 +153,24 @@ class AccountManager:
 
         transactions = dbAcc.transactions
 
-        ecoplot.plotYearlyBarTotal(plotDir, transactions)
-        ecoplot.plotYearlyBar(plotDir, transactions)
-        ecoplot.plotBar(plotDir, transactions)
-        ecoplot.plotBarYearly(plotDir, transactions)
-        ecoplot.plotTimeline(plotDir, transactions)
-        ecoplot.plotPie(plotDir, transactions)
+        ep = Ecoplot(str(plotDir))
+        ep.plotTimeline(transactions)
+        ep.plotPie(transactions)
+        ep.plotBars(transactions)
+        ep.plotCategories(transactions)
+        ep.plotBarsYearly(transactions)
+        ep.plotCategoriesYearly(transactions)
+
+        self.plotPaths = ep.plotPaths
+
+    def createReport(self):
+
+        self.createPlots()
+
+        dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
+        dbAcc = dbFile.readDB(self.groupSettings)
+
+        rp = ReportDocument(dbAcc.owner, dbAcc.accountNumber, dbAcc.bank)
+        rp.addOverallSection(self.plotPaths["all"])
+        rp.addYearlyReports(self.plotPaths["years"])
+        rp.generatePDF()
