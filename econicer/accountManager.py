@@ -40,13 +40,20 @@ class AccountManager:
         self.groupSettings = GroupSettings(self.settings.group)
 
     def initDB(self, name):
+        filepath = self.db / name / self.dbFileName
 
+        if filepath.is_file():
+            print(f"Account {name} already exitsts")
+            return False
+
+        print(f"Initialize empty account for {name}")
         emptyTransactions = pd.DataFrame(columns=BankAccount.dataframeCols)
         acc = BankAccount(name, None, None, emptyTransactions, {})
 
-        filepath = self.db / name / self.dbFileName
         dbFile = FileIO(filepath, self.dbSettings)
         dbFile.writeDB(acc)
+
+        return True
 
     def update(self, filepath):
 
@@ -59,10 +66,13 @@ class AccountManager:
         dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
         dbAcc = dbFile.readDB(self.groupSettings)
 
-        # compare accounts
-        if dbAcc.owner != updateAcc.owner:
-            print("WARNING! Owner is missmatching")
+        if not len(dbAcc.accountNumber):
+            dbAcc.accountNumber = updateAcc.accountNumber
 
+        if not len(dbAcc.bank):
+            dbAcc.bank = updateAcc.bank
+
+        # compare accounts
         if dbAcc.accountNumber != updateAcc.accountNumber:
             print("WARNING! Bank account number is missmatching")
 
