@@ -1,5 +1,4 @@
 import pylatex as tex
-from pathlib import Path
 
 
 class ReportDocument():
@@ -141,32 +140,3 @@ class ReportDocument():
                     )
                     pie.add_caption(
                         "Summation of expanses by category for this year")
-
-
-def report():
-    pass
-
-
-if __name__ == "__main__":
-    plotPaths = {
-        "all": {
-            "timeline": Path(r"D:\Eigene Dateien\Data\Eigene Projekte\econicer\testplots\ecoTimeline.pdf"),
-            "pie": Path(r"D:\Eigene Dateien\Data\Eigene Projekte\econicer\testplots\ecoPie.pdf"),
-            "categories": Path(r"D:\Eigene Dateien\Data\Eigene Projekte\econicer\testplots\ecoNettoHbarTotal.pdf"),
-            "years": Path(r"D:\Eigene Dateien\Data\Eigene Projekte\econicer\testplots\ecoYearTotal.pdf"),
-        },
-        "years": {
-            "2016": {
-                "categories": Path(r"D:\Eigene Dateien\Data\Eigene Projekte\econicer\testplots\ecoNettoHbar2016.pdf"),
-                "year": Path(r"D:\Eigene Dateien\Data\Eigene Projekte\econicer\testplots\ecoYearTest2016.pdf"),
-            },
-            "2017": {
-                "categories": Path(r"D:\Eigene Dateien\Data\Eigene Projekte\econicer\testplots\ecoNettoHbar2017.pdf"),
-                "year": Path(r"D:\Eigene Dateien\Data\Eigene Projekte\econicer\testplots\ecoYearTest2017.pdf"),
-            }
-        }
-    }
-    rp = ReportDocument("test", 123, "ING")
-    rp.addOverallSection(plotPaths["all"])
-    rp.addYearlyReports(plotPaths["years"])
-    rp.generatePDF()
