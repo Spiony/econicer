@@ -17,7 +17,7 @@ class FileIO:
         self.str2numConversion = str2numConversion
 
     def readHeader(self):
-        """extract header accountrmation from database"""
+        """extract header account information from database"""
         with open(self.filepath) as csvFile:
             header = [next(csvFile)
                       for x in range(self.settings.beginTable)]
@@ -61,7 +61,7 @@ class FileIO:
         return BankAccount(owner, accountNumber, bank, transactionDF, groupSettings)
 
     def writeDB(self, account):
-        """Write all accountrmation to database"""
+        """Write all account inforrmation to database"""
 
         filepath = Path(self.filepath)
         filepath.parent.mkdir(parents=True, exist_ok=True)
