@@ -66,7 +66,7 @@ def main():
     parser.add_argument(
         "-n",
         "--listNoGroup",
-        help="List all transactions withou group",
+        help="List all transactions without a group",
         action="store_true"
     )
     parser.add_argument(
@@ -107,17 +107,15 @@ def main():
 
     # check if db folder exists
     if not db.is_dir():
-        print("No database folder found. Creating new database folder.")
+        print("No database folder found. Creating new database folder")
         db.mkdir(parents=True)
 
     if not settingsPath.is_file():
-        print("No database settings file found. Creating default settings.")
+        print("No database settings file found. Creating default settings")
         ecoSettings = EconicerSettings(verbose=False)
         ecoSettings.write()
 
-        print("Please edit the settings file to your preferences.")
-
-        exit()
+        print("Please edit the settings file to your preferences")
 
     ecoSettings = EconicerSettings(settingsPath, verbose=False)
 
@@ -136,10 +134,13 @@ def main():
     # init new account
     if args.init:
         accountMan = AccountManager()
-        accountMan.initDB(args.init)
+        initSuccess = accountMan.initDB(args.init)
 
-        ecoSettings.updateAccountList()
-        ecoSettings.write()
+        if initSuccess:
+            ecoSettings.updateAccountList()
+            accPath = db / "//".join([args.change, AccountManager.dbFileName])
+            ecoSettings.changeAccount(args.init, accPath)
+            ecoSettings.write()
         exit()
 
     if args.undo:
