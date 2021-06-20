@@ -138,7 +138,7 @@ def main():
 
         if initSuccess:
             ecoSettings.updateAccountList()
-            accPath = db / "//".join([args.change, AccountManager.dbFileName])
+            accPath = db / "//".join([args.init, AccountManager.dbFileName])
             ecoSettings.changeAccount(args.init, accPath)
             ecoSettings.write()
         exit()
