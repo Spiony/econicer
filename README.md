@@ -8,7 +8,10 @@ report.
 
 ## Installation
 
-Install econcier with [pip](https://test.pypi.org/project/econicer/).
+Install econcier with [pip](https://pypi.org/project/econicer/).
+```
+pip install econicer
+```
 
 ### Requirements
 
