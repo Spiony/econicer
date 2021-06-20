@@ -1,0 +1,19 @@
+{
+    "delimiter": ";",
+    "beginTable": 14,	
+    "accountNumber": 3,
+    "bank": 5,
+    "owner": 6,
+    "dateFormat": "%d.%m.%y",
+    "table": {
+		"date": "date",
+		"valtua": "valtua",
+		"customer": "customer",
+		"type": "type",
+		"usage": "usage",
+		"saldo": "saldo",
+		"saldoCurrency": "saldoCurrency",
+		"value": "value",
+		"valueCurrency": "valueCurrency"
+	}
+}

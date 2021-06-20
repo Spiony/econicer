@@ -1,0 +1,38 @@
+Transactions;File created on: 31.12.2019;
+;Letztes Update: aktuell;
+
+IBAN;DE07 1234 1234 1234 1234 12;
+Accountname; Transaction account;
+Bank;Bankname;
+Customer;Arnold S.;
+Period;01.10.2019 – 31.12.2019;
+Saldo;6105,08;EUR
+
+Sorting order;desending date;
+
+Comment: All already booked transactions are listed in this file
+
+date;valtua;customer;type;usage;saldo;saldoCurrency;value;valueCurrency
+31.12.19;31.12.19;supplies;direct debit;supply service;6105,08;EUR;-123,98;EUR
+18.12.19;18.12.19;employer;salary;salary;6229,06;EUR;2000;EUR
+10.12.19;10.12.19;grocery store;direct debit;thank you for visiting;4229,06;EUR;-39,95;EUR
+10.12.19;10.12.19;gasoline;direct debit;best gasoline;4269,01;EUR;-50;EUR
+05.12.19;05.12.19;Your bank;direct debit;atm next to you;4319,01;EUR;-80,2;EUR
+05.12.19;05.12.19;grocery store;direct debit;thank you for visiting;4399,21;EUR;-60,99;EUR
+03.12.19;03.12.19;wind power;direct debit;electricity;4460,2;EUR;-30,95;EUR
+01.12.19;01.12.19;landlord;direct debit;rent;4491,15;EUR;-500;EUR
+28.11.19;28.11.19;clothes;direct debit;clothes;4991,15;EUR;-150;EUR
+21.11.19;21.11.19;employer;salary;salary;5141,15;EUR;2000;EUR
+16.11.19;16.11.19;grocery store;direct debit;thank you for visiting;3141,15;EUR;-32,95;EUR
+12.11.19;12.11.19;gasoline;direct debit;best gasoline;3174,1;EUR;-29,95;EUR
+12.11.19;12.11.19;Your bank;direct debit;atm next to you;3204,05;EUR;-40;EUR
+04.11.19;04.11.19;grocery store;direct debit;thank you for visiting;3244,05;EUR;-45;EUR
+02.11.19;02.11.19;wind power;direct debit;electricity;3289,05;EUR;-35,95;EUR
+01.11.19;01.11.19;landlord;direct debit;rent;3325;EUR;-500;EUR
+28.10.19;28.10.19;employer;salary;salary;3825;EUR;2000;EUR
+12.10.19;12.10.19;grocery store;direct debit;thank you for visiting;1825;EUR;-35;EUR
+09.10.19;09.10.19;gasoline;direct debit;best gasoline;1860;EUR;-40;EUR
+08.10.19;08.10.19;Your bank;direct debit;atm next to you;1900;EUR;-20;EUR
+05.10.19;05.10.19;grocery store;direct debit;thank you for visiting;1920;EUR;-50;EUR
+05.10.19;05.10.19;wind power;direct debit;electricity;1970;EUR;-30;EUR
+01.10.19;01.10.19;landlord;direct debit;rent;2000;EUR;-500;EUR
