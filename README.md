@@ -8,7 +8,7 @@ report.
 
 ## Installation
 
-Install econcier with pip (not working yet)
+Install econcier with pip
 
 ### Requirements
 
