@@ -8,6 +8,27 @@ from econicer.auxiliary import str2num
 from econicer.account import BankAccount
 
 
+def countKeys(inDict, key):
+
+    count = sum([1 for k in inDict.keys() if k.split(".")[0] == key])
+    return count
+
+
+def invertDict(singleLayerDict):
+
+    invertedDict = {}
+    for k, v in singleLayerDict.items():
+
+        if v in invertedDict:
+            count = countKeys(invertedDict, v)
+
+            v = f"{v}.{count}"
+
+        invertedDict[v] = k
+
+    return invertedDict
+
+
 class FileIO:
 
     def __init__(self, filepath, settings, str2numConversion=True):
@@ -39,14 +60,19 @@ class FileIO:
             self.filepath,
             sep=self.settings.delimiter,
             header=self.settings.beginTable,
-            skip_blank_lines=False
+            skip_blank_lines=False,
+            encoding=self.settings.encoding
         )
+
+        if isinstance(self.settings.table, dict):
+            renameTable = invertDict(self.settings.table)
+            transactionDF = transactionDF.rename(columns=renameTable)
 
         transactionDF["date"] = pd.to_datetime(
             transactionDF["date"], format=self.settings.dateFormat)
 
-        transactionDF["valtua"] = pd.to_datetime(
-            transactionDF["valtua"], format=self.settings.dateFormat)
+        transactionDF["valuta"] = pd.to_datetime(
+            transactionDF["valuta"], format=self.settings.dateFormat)
 
         if self.str2numConversion:
             transactionDF["value"] = transactionDF["value"].apply(str2num)
@@ -86,8 +112,8 @@ class FileIO:
             csvwriter.writerow(["bank", account.bank])
             csvwriter.writerow(["#STATS"])
             csvwriter.writerow(["totalSum", "..."])
-            csvwriter.writerow(["expanseGroupNames", "..."])
-            csvwriter.writerow(["expanseGroupValues", "..."])
+            csvwriter.writerow(["expenseGroupNames", "..."])
+            csvwriter.writerow(["expenseGroupValues", "..."])
             csvwriter.writerow(["#TRANSACTIONS"])
 
         # write table
