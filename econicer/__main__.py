@@ -41,7 +41,7 @@ def main():
         "-s",
         "--search",
         metavar="KEYWORD",
-        help="Search for specified keyword in category 'usage' and lists sum of expanses",
+        help="Search for specified keyword in category 'usage' and lists sum of expenses",
         default=""
     )
     parser.add_argument(

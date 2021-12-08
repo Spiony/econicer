@@ -7,7 +7,7 @@ class BankAccount:
 
     dataframeCols = [
         "date",
-        "valtua",
+        "valuta",
         "customer",
         "type",
         "usage",
