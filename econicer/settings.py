@@ -47,7 +47,7 @@ class DatabaseSettings(Settings):
     dateFormat = "%d.%m.%Y"
     table = [
         "date",
-        "valtua",
+        "valuta",
         "customer",
         "type",
         "usage",
@@ -57,6 +57,7 @@ class DatabaseSettings(Settings):
         "valueCurrency",
         "groupID"
     ]
+    encoding = "utf-8"
 
 
 class ExternalSettings(Settings):
@@ -164,6 +165,7 @@ class BankFileSettings(ExternalSettings):
     owner = -1
     dateFormat = r""
     table = {}
+    encoding = ""
 
 
 if __name__ == "__main__":
