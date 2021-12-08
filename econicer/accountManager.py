@@ -16,7 +16,7 @@ from econicer.settings import GroupSettings
 
 
 def printSum(transactionDataframe):
-    print(f"\n Sum of expanses: {transactionDataframe.value.sum():.2f}")
+    print(f"\n Sum of expenses: {transactionDataframe.value.sum():.2f}")
 
 
 class AccountManager:
@@ -165,7 +165,7 @@ class AccountManager:
 
         ep = Ecoplot(str(plotDir))
         ep.plotTimeline(transactions)
-        ep.plotPie(transactions)
+        ep.plotPieSplit(transactions)
         ep.plotBars(transactions)
         ep.plotCategories(transactions)
         ep.plotBarsYearly(transactions)

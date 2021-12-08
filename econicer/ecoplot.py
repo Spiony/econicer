@@ -74,7 +74,7 @@ class Ecoplot:
 
         self.plotPaths["all"].update({"timeline": filename})
 
-    def plotPie(self, transactions):
+    def plotPie(self, transactions, plotName="pie"):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         d = transactions['groupID'].value_counts()
@@ -84,11 +84,20 @@ class Ecoplot:
         d.plot.pie(y="value", figsize=(5, 5), ax=ax, legend=False)
         plt.ylabel("")
 
-        filename = Path(self.plotDir) / "ecoPie"
+        filename = Path(self.plotDir) / f"ecoPie_{plotName}"
         self.saveFig(fig, filename)
         plt.close(fig)
 
-        self.plotPaths["all"].update({"pie": filename})
+        self.plotPaths["all"].update({plotName: filename})
+
+    def plotPieSplit(self, transactions):
+        ids = transactions["value"] > 0
+        incomingTransactions = transactions[ids]
+        self.plotPie(incomingTransactions, "pie_income")
+
+        ids = ~ids
+        outgoingTransactions = transactions[ids]
+        self.plotPie(outgoingTransactions, "pie_outgoing")
 
     def plotCategories(self, transactions):
 
