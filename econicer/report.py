@@ -36,7 +36,7 @@ class ReportDocument():
         # \usepackage[section]{placeins}
 
     def generatePDF(self):
-        self.doc.generate_pdf(compiler="xelatex", clean_tex=True)
+        self.doc.generate_pdf(compiler="xelatex", clean_tex=False)
 
     def addHeader(self):
         # Add document header
@@ -84,11 +84,10 @@ class ReportDocument():
                         width=tex.NoEscape(r'0.5\linewidth'))) as pie:
 
                     pie.add_image(
-                        str(plotPaths["pie"]),
+                        str(plotPaths["years"]),
                         width=tex.NoEscape(r'\linewidth')
                     )
-                    pie.add_caption('Cash flow distribution by category')
-
+                    pie.add_caption('Yearly income and expenses')
                 self.doc.append(tex.LineBreak())
 
                 with self.doc.create(tex.SubFigure(
@@ -96,10 +95,23 @@ class ReportDocument():
                         width=tex.NoEscape(r'0.5\linewidth'))) as pie:
 
                     pie.add_image(
-                        str(plotPaths["years"]),
+                        str(plotPaths["pie_income"]),
                         width=tex.NoEscape(r'\linewidth')
                     )
-                    pie.add_caption('Yearly income and expanses')
+                    pie.add_caption('Income distribution by category')
+
+                with self.doc.create(tex.SubFigure(
+                        position='b',
+                        width=tex.NoEscape(r'0.5\linewidth'))) as pie:
+
+                    pie.add_image(
+                        str(plotPaths["pie_outgoing"]),
+                        width=tex.NoEscape(r'\linewidth')
+                    )
+                    pie.add_caption('Expenses distribution by category')
+
+                self.doc.append(tex.LineBreak())
+
                 with self.doc.create(tex.SubFigure(
                         position='b',
                         width=tex.NoEscape(r'0.5\linewidth'))) as pie:
@@ -109,17 +121,22 @@ class ReportDocument():
                         width=tex.NoEscape(r'\linewidth')
                     )
                     pie.add_caption(
-                        "Summation of expanses by category for all years")
+                        "Summation of expenses by category for all years")
         self.doc.append(tex.Command("newpage"))
 
     def addYearlyReports(self, plotPaths):
 
+        i = 0
         for year, paths in plotPaths.items():
             self.addYearSection(year, paths)
 
+            i += 1
+            if (i % 2) == 0:
+                self.doc.append(tex.Command("newpage"))
+
     def addYearSection(self, year, plotPaths):
 
-        with self.doc.create(tex.Section(f'Financial Reprot {year}')):
+        with self.doc.create(tex.Section(f'Financial Report {year}')):
             with self.doc.create(tex.Figure(position='h!')):
                 with self.doc.create(tex.SubFigure(
                         position='b',
@@ -129,7 +146,7 @@ class ReportDocument():
                         str(plotPaths["year"]),
                         width=tex.NoEscape(r'\linewidth')
                     )
-                    pie.add_caption('Monthly income and expanses')
+                    pie.add_caption('Monthly income and expenses')
                 with self.doc.create(tex.SubFigure(
                         position='b',
                         width=tex.NoEscape(r'0.5\linewidth'))) as pie:
@@ -139,4 +156,4 @@ class ReportDocument():
                         width=tex.NoEscape(r'\linewidth')
                     )
                     pie.add_caption(
-                        "Summation of expanses by category for this year")
+                        "Summation of expenses by category for this year")
