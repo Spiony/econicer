@@ -64,96 +64,62 @@ class ReportDocument():
         self.doc.preamble.append(header)
         self.doc.change_document_style("header")
 
+    def createFig(self, imagePath, caption, width=tex.NoEscape(r'0.5\linewidth')):
+        fig = tex.SubFigure(position='b', width=width)
+        fig.add_image(str(imagePath), width=tex.NoEscape(r'\linewidth'))
+        fig.add_caption(caption)
+
+        return fig
+
     def addOverallSection(self, plotPaths):
 
-        with self.doc.create(tex.Section('Overall Financial Report')):
-            self.doc.append('Report for all available data')
-            with self.doc.create(tex.Figure(position='h!')):
-                with self.doc.create(tex.SubFigure(
-                        position='b',
-                        width=tex.NoEscape(r'0.5\linewidth'))) as timeLine:
+        title = "Overall Financial Report"
+        text = "Report for all available years."
 
-                    timeLine.add_image(
-                        str(plotPaths["timeline"]),
-                        width=tex.NoEscape(r'\linewidth')
-                    )
-                    timeLine.add_caption("Account saldo timeline")
+        overallPlots = {
+            "timeline": "Account saldo total timeline",
+            "years": "Yearly income and expenses",
+            "pie_income": "Income distribution by category",
+            "pie_outgoing": "Expenses distribution by category",
+            "hbar_outgoing": "Summation of expenses by category",
+            "hbar_incoming": "Summation of incomings by category",
+        }
 
-                with self.doc.create(tex.SubFigure(
-                        position='b',
-                        width=tex.NoEscape(r'0.5\linewidth'))) as pie:
-
-                    pie.add_image(
-                        str(plotPaths["years"]),
-                        width=tex.NoEscape(r'\linewidth')
-                    )
-                    pie.add_caption('Yearly income and expenses')
-                self.doc.append(tex.LineBreak())
-
-                with self.doc.create(tex.SubFigure(
-                        position='b',
-                        width=tex.NoEscape(r'0.5\linewidth'))) as pie:
-
-                    pie.add_image(
-                        str(plotPaths["pie_income"]),
-                        width=tex.NoEscape(r'\linewidth')
-                    )
-                    pie.add_caption('Income distribution by category')
-
-                with self.doc.create(tex.SubFigure(
-                        position='b',
-                        width=tex.NoEscape(r'0.5\linewidth'))) as pie:
-
-                    pie.add_image(
-                        str(plotPaths["pie_outgoing"]),
-                        width=tex.NoEscape(r'\linewidth')
-                    )
-                    pie.add_caption('Expenses distribution by category')
-
-                self.doc.append(tex.LineBreak())
-
-                with self.doc.create(tex.SubFigure(
-                        position='b',
-                        width=tex.NoEscape(r'0.5\linewidth'))) as pie:
-
-                    pie.add_image(
-                        str(plotPaths["categories"]),
-                        width=tex.NoEscape(r'\linewidth')
-                    )
-                    pie.add_caption(
-                        "Summation of expenses by category for all years")
+        self.addSection(title, text, overallPlots, plotPaths)
         self.doc.append(tex.Command("newpage"))
+
+    def addSection(self, title, text="", plotDict={}, plotPaths={}):
+
+        with self.doc.create(tex.Section(title)):
+
+            if text:
+                self.doc.append(text)
+
+            with self.doc.create(tex.Figure(position='h!')) as fig:
+
+                for i, (plotName, cap) in enumerate(plotDict.items()):
+
+                    subplot = self.createFig(plotPaths[plotName], cap)
+                    fig.append(subplot)
+
+                    if (i + 1) % 2 == 0:
+                        self.doc.append(tex.LineBreak())
 
     def addYearlyReports(self, plotPaths):
 
-        i = 0
-        for year, paths in plotPaths.items():
+        for i, (year, paths) in enumerate(plotPaths.items()):
             self.addYearSection(year, paths)
 
-            i += 1
-            if (i % 2) == 0:
+            if (i + 1) % 2 == 0:
                 self.doc.append(tex.Command("newpage"))
 
     def addYearSection(self, year, plotPaths):
 
-        with self.doc.create(tex.Section(f'Financial Report {year}')):
-            with self.doc.create(tex.Figure(position='h!')):
-                with self.doc.create(tex.SubFigure(
-                        position='b',
-                        width=tex.NoEscape(r'0.5\linewidth'))) as pie:
+        title = f"Financial Report {year}"
 
-                    pie.add_image(
-                        str(plotPaths["year"]),
-                        width=tex.NoEscape(r'\linewidth')
-                    )
-                    pie.add_caption('Monthly income and expenses')
-                with self.doc.create(tex.SubFigure(
-                        position='b',
-                        width=tex.NoEscape(r'0.5\linewidth'))) as pie:
+        plots = {
+            "year": "Monthly income and expenses",
+            "categories": "Summation of expenses by category for this year",
+        }
 
-                    pie.add_image(
-                        str(plotPaths["categories"]),
-                        width=tex.NoEscape(r'\linewidth')
-                    )
-                    pie.add_caption(
-                        "Summation of expenses by category for this year")
+        self.addSection(title, plotDict=plots, plotPaths=plotPaths)
