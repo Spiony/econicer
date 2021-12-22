@@ -164,6 +164,7 @@ class AccountManager:
         transactions = dbAcc.transactions
 
         ep = Ecoplot(str(plotDir))
+        ep.plotHbarSplit(transactions)
         ep.plotTimeline(transactions)
         ep.plotPieSplit(transactions)
         ep.plotBars(transactions)

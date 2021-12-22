@@ -137,6 +137,39 @@ class Ecoplot:
 
         self.plotPaths["all"].update({"years": filename})
 
+    def splitTransactions(self, transactions):
+        ids = transactions["value"] > 0
+        incomingTransactions = transactions[ids]
+        outgoingTransactions = transactions[~ids]
+        return incomingTransactions, outgoingTransactions
+
+    def plotHbarSplit(self, transactions):
+
+        incomingTransactions, outgoingTransactions = self.splitTransactions(
+            transactions)
+
+        self.plotHbar(incomingTransactions, "hbar_incoming")
+        self.plotHbar(outgoingTransactions, "hbar_outgoing")
+
+    def plotHbar(self, transactions, plotName):
+        absGroupVal = transactions.pivot_table(
+            values=["value"],
+            index=["groupID"],
+            aggfunc={"value": np.sum}
+        )
+        absGroupVal = absGroupVal.sort_values("value")
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        absGroupVal.plot.barh(y="value", ax=ax, legend=False)
+        plt.xlabel("summation / EUR")
+        plt.ylabel("")
+        filename = Path(self.plotDir) / f"eco_{plotName}"
+        self.saveFig(fig, filename)
+        plt.close(fig)
+
+        self.plotPaths["all"].update({plotName: filename})
+
     def plotBarsYearly(self, transactions):
         """Show total in and out per month over a year"""
         df = transactions
