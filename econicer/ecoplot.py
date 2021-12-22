@@ -210,7 +210,9 @@ class Ecoplot:
         for y in years:
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            yearTrans.loc[y, :].plot.barh(y="value", ax=ax)
+            yearSelected = yearTrans.loc[y, :]
+            yearSelected = yearSelected.sort_values()
+            yearSelected.plot.barh(y="value", ax=ax)
             plt.xlabel("summation / EUR")
             plt.ylabel("")
             filename = Path(self.plotDir) / f"ecoNettoHbar{y}"
