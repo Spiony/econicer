@@ -1,8 +1,6 @@
-import re
 import shutil
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from econicer.account import BankAccount
@@ -19,6 +17,7 @@ def printSum(transactionDataframe):
     print(f"\n Sum of expenses: {transactionDataframe.value.sum():.2f}")
 
 
+# accuont manager should open the file only once
 class AccountManager:
 
     dbFileName = "history.csv"
@@ -39,19 +38,41 @@ class AccountManager:
 
         self.groupSettings = GroupSettings(self.settings.group)
 
+        self.fileIO = FileIO(
+            self.settings.currentAccountFile, self.dbSettings
+        )
+
+        if Path(self.settings.currentAccountFile).is_file():
+            self.account = self.fileIO.readDB(self.groupSettings)
+        else:
+            self.account = None
+
+        self.plotPaths = {}
+
+    def defineAccountFilepath(self, name):
+        return self.db / name / self.dbFileName
+
+    def updateAccountPaths(self, name, filepath):
+        self.fileIO.updateFilepath(filepath)
+        self.settings.changeAccount(name, filepath)
+
     def initDB(self, name):
-        filepath = self.db / name / self.dbFileName
+        filepath = self.defineAccountFilepath(name)
 
         if filepath.is_file():
-            print(f"Account {name} already exitsts")
+            print(f"Account {name} already exists")
             return False
 
         print(f"Initialize empty account for {name}")
         emptyTransactions = pd.DataFrame(columns=BankAccount.dataframeCols)
-        acc = BankAccount(name, None, None, emptyTransactions, {})
+        self.account = BankAccount(
+            name, None, None, emptyTransactions, self.groupSettings
+        )
 
-        dbFile = FileIO(filepath, self.dbSettings)
-        dbFile.writeDB(acc)
+        self.updateAccountPaths(name, filepath)
+
+        self.fileIO.writeDB(self.account)
+        self.settings.write()
 
         return True
 
@@ -61,27 +82,23 @@ class AccountManager:
 
         updateFile = FileIO(filepath, self.bankSettings)
         updateAcc = updateFile.readDB(self.groupSettings)
-        # updateAcc.groupTransactions()
 
-        dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
-        dbAcc = dbFile.readDB(self.groupSettings)
+        if not len(self.account.accountNumber):
+            self.account.accountNumber = updateAcc.accountNumber
 
-        if not len(dbAcc.accountNumber):
-            dbAcc.accountNumber = updateAcc.accountNumber
-
-        if not len(dbAcc.bank):
-            dbAcc.bank = updateAcc.bank
+        if not len(self.account.bank):
+            self.account.bank = updateAcc.bank
 
         # compare accounts
-        if dbAcc.accountNumber != updateAcc.accountNumber:
-            print("WARNING! Bank account number is missmatching")
+        if self.account.accountNumber != updateAcc.accountNumber:
+            print("WARNING! Bank account number is mismatching")
 
-        if dbAcc.bank != updateAcc.bank:
-            print("WARNING! Bank institute is missmatching")
+        if self.account.bank != updateAcc.bank:
+            print("WARNING! Bank institute is mismatching")
 
-        dbAcc.update(updateAcc.transactions)
+        self.account.update(updateAcc.transactions)
 
-        dbFile.writeDB(dbAcc)
+        self.fileIO.writeDB(self.account)
 
     def makeBackup(self):
         undoFile = f"{self.settings.currentAccountFile}.old"
@@ -94,76 +111,56 @@ class AccountManager:
     def regroup(self):
         self.makeBackup()
 
-        dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
-        dbAcc = dbFile.readDB(self.groupSettings)
-        dbAcc.groupTransactions()
-        dbFile.writeDB(dbAcc)
+        self.account.groupTransactions()
+        self.fileIO.writeDB(self.account)
 
     def listNoGroups(self, category=None):
 
-        dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
-        dbAcc = dbFile.readDB(self.groupSettings)
-
         if category:
-            trans = dbAcc.transactions[category[0]]
+            trans = self.account.transactions[category[0]]
         else:
-            trans = dbAcc.transactions
-        noGrp = trans[dbAcc.transactions["groupID"] == "None"]
+            trans = self.account.transactions
+        noGrp = trans[self.account.transactions["groupID"] == "None"]
         if noGrp.empty:
             print("All transactions are grouped.")
         else:
             print(noGrp)
+            printSum(noGrp)
 
     def listGroup(self, group):
         pd.set_option("display.max_rows", None)
 
-        dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
-        dbAcc = dbFile.readDB(self.groupSettings)
-
-        transFiltered = dbAcc.transactions[dbAcc.transactions["groupID"] == group]
+        transFiltered = self.account.transactions[self.account.transactions["groupID"] == group]
         print(transFiltered)
         printSum(transFiltered)
 
-    def search(self, search, category):
-        keyword = fr"({search})"
+    def search(self, search, categories):
 
-        if category is None:
+        if categories is None:
             categories = ["usage"]
-        else:
-            categories = category
 
-        print(f"Seaching for {search} in {categories}")
+        print(f"Searching for {search} in {categories}")
+        result = self.account.search(search, categories)
 
-        dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
-        dbAcc = dbFile.readDB(self.groupSettings)
-
-        ids = []
-        for cat in categories:
-            subDF = dbAcc.transactions[cat]
-            matches = subDF.str.extractall(keyword, re.IGNORECASE)
-            if not matches.empty:
-                tmp = list(matches.index.droplevel(1).values)
-                ids = ids + tmp
-        if ids:
-            ids = np.unique(ids)
-            trans = dbAcc.transactions.loc[ids, :]
-            print(trans)
-            printSum(trans)
+        if result is not None:
+            print(result)
+            printSum(result)
         else:
             print("Could not find any matches")
 
     def createPlots(self):
 
-        dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
-        dbAcc = dbFile.readDB(self.groupSettings)
-
         plotDir = Path(self.settings.plotDir)
         if not plotDir.exists():
             plotDir.mkdir(parents=True)
 
-        transactions = dbAcc.transactions
+        transactions = self.account.transactions
 
         ep = Ecoplot(str(plotDir))
+        """
+        ep.plotCategoriesRatioMonthly(transactions)
+        ep.plotCategoriesMonthly(transactions)
+        """
         ep.plotHbarSplit(transactions)
         ep.plotTimeline(transactions)
         ep.plotPieSplit(transactions)
@@ -174,14 +171,22 @@ class AccountManager:
 
         self.plotPaths = ep.plotPaths
 
+    def calculateStatistics(self):
+        self.statistics = {}
+        # average monthly income; expense; top 5 spending categories
+        # yearly average value for each category
+
     def createReport(self):
 
         self.createPlots()
+        self.calculateStatistics()
 
-        dbFile = FileIO(self.settings.currentAccountFile, self.dbSettings)
-        dbAcc = dbFile.readDB(self.groupSettings)
-
-        rp = ReportDocument(dbAcc.owner, dbAcc.accountNumber, dbAcc.bank)
-        rp.addOverallSection(self.plotPaths["all"])
+        rp = ReportDocument(
+            self.account.owner,
+            self.account.accountNumber,
+            self.account.bank
+        )
+        rp.addOverallSection(self.plotPaths["overall"])
+        rp.addStatisticsSection(self.statistics)
         rp.addYearlyReports(self.plotPaths["years"])
         rp.generatePDF()
