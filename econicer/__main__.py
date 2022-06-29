@@ -8,12 +8,13 @@ from econicer.settings import EconicerSettings
 
 def main():
 
+    # command line arguments
     parser = argparse.ArgumentParser(
         description=""
         "   ___  _________  ____  __________  ____\n"
-        "  / _ \/ ___/ __ \/ __ \/ / ___/ _ \/ __/\n"
+        "  / _ \\/ ___/ __ \\/ __ \\/ / ___/ _ \\/ __/\n"
         " /  __/ /__/ /_/ / / / / / /__/  __/ /\n"
-        " \___/\___/\____/_/ /_/_/\___/\___/_/\n\n"
+        " \\___/\\___/\\____/_/ /_/_/\\___/\\___/_/\n\n"
         " a perception of economic success",
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -99,7 +100,7 @@ def main():
     if len(sys.argv) == 1:
         # display help message when no args are passed.
         parser.print_help()
-        sys.exit()
+        exit()
 
     # Path objects to database and settings file
     db = Path.cwd() / ".db"
@@ -131,64 +132,55 @@ def main():
         ecoSettings.write()
         exit()
 
-    # init new account
-    if args.init:
-        accountMan = AccountManager()
-        initSuccess = accountMan.initDB(args.init)
-
-        if initSuccess:
-            ecoSettings.updateAccountList()
-            accPath = db / "//".join([args.init, AccountManager.dbFileName])
-            ecoSettings.changeAccount(args.init, accPath)
-            ecoSettings.write()
-        exit()
-
     if args.undo:
         accountMan = AccountManager()
         accountMan.undo()
         exit()
 
+    # init new account
+    if args.init:
+        accountMan = AccountManager()
+        initSuccess = accountMan.initDB(args.init)
+
+        if not initSuccess:
+            exit()
+
     # Add file to account history
     if args.add:
         accountMan = AccountManager()
         accountMan.update(args.add)
-        exit()
 
     # regroup database
     if args.group:
         accountMan = AccountManager()
         accountMan.regroup()
-        exit()
 
     # list all transactions in current account without group
     if args.listNoGroup:
         accountMan = AccountManager()
         accountMan.listNoGroups(args.category)
-        exit()
 
     # list all transactions in current account without group
     if args.listGroup:
         accountMan = AccountManager()
         accountMan.listGroup(args.listGroup)
-        exit()
 
     # search for keyword in specified categories
     if args.search:
         accountMan = AccountManager()
         accountMan.search(args.search, args.category)
-        exit()
 
     # Create plots from current history
     if args.plot:
         accountMan = AccountManager()
         accountMan.createPlots()
-        exit()
 
     # print report for all account data
     if args.report:
         accountMan = AccountManager()
+        if not len(accountMan.plotPaths):
+            accountMan.createPlots()
         accountMan.createReport()
-        exit()
 
 
 if __name__ == "__main__":
