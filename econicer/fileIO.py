@@ -37,6 +37,9 @@ class FileIO:
         self.settings = settings
         self.str2numConversion = str2numConversion
 
+    def updateFilepath(self, filepath):
+        self.filepath = filepath
+
     def readHeader(self):
         """extract header account information from database"""
         with open(self.filepath) as csvFile:
