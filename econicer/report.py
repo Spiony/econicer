@@ -72,6 +72,7 @@ class ReportDocument():
         return fig
 
     def addOverallSection(self, plotPaths):
+        """Define plots for the overall section"""
 
         title = "Overall Financial Report"
         text = "Report for all available years."
@@ -114,6 +115,7 @@ class ReportDocument():
                 self.doc.append(tex.Command("newpage"))
 
     def addYearSection(self, year, plotPaths):
+        """Define plots for the yearly section"""
 
         title = f"Financial Report {year}"
 
@@ -123,3 +125,6 @@ class ReportDocument():
         }
 
         self.addSection(title, plotDict=plots, plotPaths=plotPaths)
+
+    def addStatisticsSection(self, statistics):
+        pass
