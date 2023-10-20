@@ -1,6 +1,4 @@
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 from cycler import cycler
 import pandas as pd
 import numpy as np
@@ -20,17 +18,17 @@ def nestedSet(dic, keys, value):
 def calcPosNegSums(df):
     posSum = pd.pivot_table(
         df,
-        index=df['date'].dt.month,
-        columns=df['date'].dt.year,
-        values='value',
-        aggfunc=lambda x: x[x > 0].sum()
+        index=df["date"].dt.month,
+        columns=df["date"].dt.year,
+        values="value",
+        aggfunc=lambda x: x[x > 0].sum(),
     )
     negSum = pd.pivot_table(
         df,
-        index=df['date'].dt.month,
-        columns=df['date'].dt.year,
-        values='value',
-        aggfunc=lambda x: x[x < 0].sum()
+        index=df["date"].dt.month,
+        columns=df["date"].dt.year,
+        values="value",
+        aggfunc=lambda x: x[x < 0].sum(),
     )
     posSum = posSum.rename_axis("month")
     posSum = posSum.rename_axis("year", axis="columns")
@@ -54,7 +52,6 @@ class Ecoplot:
     plotPaths = {"overall": {}, "years": {}}
 
     def saveFig(self, fig, filename, width=None, height=None, skipTight=False):
-
         if not width:
             width = self.plotOptions.width
 
@@ -87,10 +84,11 @@ class Ecoplot:
     def plotPie(self, transactions, plotName="pie"):
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        d = transactions['groupID'].value_counts()
+        d = transactions["groupID"].value_counts()
         # sum all neg and pos; subplot for both
         d = transactions.pivot_table(
-            index=["groupID"], aggfunc={"value": lambda x: np.sum(np.abs(x))})
+            index=["groupID"], aggfunc={"value": lambda x: np.sum(np.abs(x))}
+        )
         d.plot.pie(y="value", figsize=(5, 5), ax=ax, legend=False)
         plt.ylabel("")
 
@@ -110,11 +108,8 @@ class Ecoplot:
         self.plotPie(outgoingTransactions, "pie_outgoing")
 
     def plotCategories(self, transactions):
-
         absGroupVal = transactions.pivot_table(
-            values=["value"],
-            index=["groupID"],
-            aggfunc={"value": np.sum}
+            values=["value"], index=["groupID"], aggfunc={"value": np.sum}
         )
 
         fig = plt.figure()
@@ -134,9 +129,9 @@ class Ecoplot:
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        yearDF = pd.concat([posSum.sum().rename('in'),
-                            negSum.sum().rename('out')],
-                           axis=1)
+        yearDF = pd.concat(
+            [posSum.sum().rename("in"), negSum.sum().rename("out")], axis=1
+        )
         yearDF.plot.bar(ax=ax)
         plt.ylabel("summation / EUR")
         plt.xticks(rotation=45)
@@ -154,18 +149,16 @@ class Ecoplot:
         return incomingTransactions, outgoingTransactions
 
     def plotHbarSplit(self, transactions):
-
         incomingTransactions, outgoingTransactions = self.splitTransactions(
-            transactions)
+            transactions
+        )
 
         self.plotHbar(incomingTransactions, "hbar_incoming")
         self.plotHbar(outgoingTransactions, "hbar_outgoing")
 
     def plotHbar(self, transactions, plotName):
         absGroupVal = transactions.pivot_table(
-            values=["value"],
-            index=["groupID"],
-            aggfunc={"value": np.sum}
+            values=["value"], index=["groupID"], aggfunc={"value": np.sum}
         )
         absGroupVal = absGroupVal.sort_values("value")
 
@@ -193,9 +186,8 @@ class Ecoplot:
             fig = plt.figure()
             ax = fig.add_subplot(111)
             yearDF = pd.concat(
-                [posSum.loc[:, y].rename(
-                    'in'), negSum.loc[:, y].rename('out')],
-                axis=1)
+                [posSum.loc[:, y].rename("in"), negSum.loc[:, y].rename("out")], axis=1
+            )
             yearDF.plot.bar(ax=ax)
             ax.set_ylim([minSaldo * 1.1, maxSaldo * 1.1])
             plt.ylabel("summation / EUR")
@@ -206,14 +198,13 @@ class Ecoplot:
             nestedSet(self.plotPaths, ["years", f"{y}", "year"], filename)
 
     def plotCategoriesYearly(self, transactions):
-
         df = transactions
         yearTrans = pd.pivot_table(
             df,
-            index=df['date'].dt.year,
-            columns=df['groupID'],
-            values='value',
-            aggfunc=np.sum
+            index=df["date"].dt.year,
+            columns=df["groupID"],
+            values="value",
+            aggfunc=np.sum,
         )
 
         years = yearTrans.index
@@ -229,38 +220,36 @@ class Ecoplot:
             self.saveFig(fig, filename)
             plt.close(fig)
 
-            nestedSet(self.plotPaths, [
-                      "years", f"{y}", "categories"], filename)
+            nestedSet(self.plotPaths, ["years", f"{y}", "categories"], filename)
 
     def plotCategoriesRatioMonthly(self, transactions):
         """Calculate ratio of monthly expense and create line plot for each month"""
         df = transactions
-        years = list(set(df['date'].dt.year))
+        years = list(set(df["date"].dt.year))
         monthTrans = pd.pivot_table(
             df,
             index=df["date"].dt.strftime("%Y-%m"),
-            columns=df['groupID'],
-            values='value',
-            aggfunc=np.sum
+            columns=df["groupID"],
+            values="value",
+            aggfunc=np.sum,
         )
 
         monthTrans.index = pd.to_datetime(monthTrans.index)
 
         legendCreated = False
         for year in years:
-            transInYear = monthTrans[f"{year}-01-01": f"{year}-12-31"]
+            transInYear = monthTrans[f"{year}-01-01":f"{year}-12-31"]
             selector = (transInYear.columns != "income") & (
-                transInYear.columns != "saving")
+                transInYear.columns != "saving"
+            )
             transInYear = transInYear.loc[:, selector]
 
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            colorcycle = cycler(
-                color=plt.rcParams['axes.prop_cycle'].by_key()['color'])
-            linecycle = cycler('linestyle', ['-', '--', ':', '-.'])
+            colorcycle = cycler(color=plt.rcParams["axes.prop_cycle"].by_key()["color"])
+            linecycle = cycler("linestyle", ["-", "--", ":", "-."])
             plt.gca().set_prop_cycle(linecycle * colorcycle)
-            transInYear.plot.line(ax=ax, legend=False,
-                                  marker="o", ms=2, rot=45)
+            transInYear.plot.line(ax=ax, legend=False, marker="o", ms=2, rot=45)
             ax.set_yscale("symlog")
             plt.ylabel("value / EUR")
             plt.xlabel("")
@@ -269,44 +258,44 @@ class Ecoplot:
             self.saveFig(fig, filename)
             plt.close(fig)
 
-            nestedSet(self.plotPaths, [
-                "years", f"{year}", "monthly"], filename)
+            nestedSet(self.plotPaths, ["years", f"{year}", "monthly"], filename)
 
             if not legendCreated:
                 handles, labels = ax.get_legend_handles_labels()
 
                 legFig = plt.figure()
-                leg = legFig.legend(
-                    handles=handles, labels=labels, loc="center")
+                leg = legFig.legend(handles=handles, labels=labels, loc="center")
 
                 leg.figure.canvas.draw()
                 bb = leg.get_window_extent()
-                width = (bb.x1 - bb.x0) / 100 + 2 * \
-                    leg.borderaxespad * plt.rcParams['font.size'] / 72
+                width = (bb.x1 - bb.x0) / 100 + 2 * leg.borderaxespad * plt.rcParams[
+                    "font.size"
+                ] / 72
                 height = (bb.y1 - bb.y0) / 100
 
                 filename = Path(self.plotDir) / "ecoMonth_Legend"
                 self.saveFig(legFig, filename, width=width, height=height)
                 plt.close(legFig)
                 legendCreated = True
-                nestedSet(self.plotPaths, [
-                    "years", f"{year}", "monthly_legend"], filename)
+                nestedSet(
+                    self.plotPaths, ["years", f"{year}", "monthly_legend"], filename
+                )
 
     def plotCategoriesMonthly(self, transactions):
         df = transactions
-        years = list(set(df['date'].dt.year))
+        years = list(set(df["date"].dt.year))
         monthTrans = pd.pivot_table(
             df,
             index=df["date"].dt.strftime("%Y-%m"),
-            columns=df['groupID'],
-            values='value',
-            aggfunc=np.sum
+            columns=df["groupID"],
+            values="value",
+            aggfunc=np.sum,
         )
 
         monthTrans.index = pd.to_datetime(monthTrans.index)
 
         for year in years:
-            transInYear = monthTrans[f"{year}-01-01": f"{year}-12-31"]
+            transInYear = monthTrans[f"{year}-01-01":f"{year}-12-31"]
 
             """
             fig = plt.figure()
@@ -319,8 +308,10 @@ class Ecoplot:
                 x.set_xticklabels("")
                 x.set_title("")
                 x.set_xlabel("")
-            xlabels = [pandas_datetime.strftime(
-                "%Y-%m") for pandas_datetime in transInYear.index]
+            xlabels = [
+                pandas_datetime.strftime("%Y-%m")
+                for pandas_datetime in transInYear.index
+            ]
             axes[-1].set_xticklabels(xlabels)
             lines = []
             labels = []
@@ -330,7 +321,7 @@ class Ecoplot:
                 labels.extend(Label)
 
             # rotating x-axis labels of last sub-plot
-            fig.legend(lines, labels, loc='upper center', ncol=5)
+            fig.legend(lines, labels, loc="upper center", ncol=5)
 
             plt.subplots_adjust(top=0.90)
 

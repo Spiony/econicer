@@ -9,7 +9,6 @@ pp = pprint.PrettyPrinter()
 
 
 class Settings(ABC):
-
     _settingsName = ""
 
     def listCurrentSettings(self):
@@ -74,11 +73,9 @@ class ExternalSettings(Settings):
         settingsPath = Path(self._filename)
 
         if settingsPath.is_file():
-
             settDict = json2Dict(settingsPath)
 
             for k, v in self.__class__.__dict__.items():
-
                 if k.startswith("_"):
                     continue
 
@@ -92,7 +89,8 @@ class ExternalSettings(Settings):
         else:
             if verbose:
                 print(
-                    f"Could not find settings file for {self._settingsName}. Use default parameters")
+                    f"Could not find settings file for {self._settingsName}. Use default parameters"
+                )
 
             for k, v in self.__class__.__dict__.items():
                 # add attribute checking
@@ -120,19 +118,21 @@ class EconicerSettings(ExternalSettings):
 
     def changeAccount(self, accountName, accountFile):
         if accountName == self.currentAccount:
-            print(f"Already on {self.currentAccount} account")
+            if self.verbose:
+                print(f"Already on {self.currentAccount} account")
         elif accountName in self.accountList:
             self.currentAccount = accountName
             self.currentAccountFile = accountFile
             self.plotDir = str(Path("plots") / self.currentAccount)
-            print(f"Set current account to {self.currentAccount}")
+            if self.verbose:
+                print(f"Set current account to {self.currentAccount}")
         else:
-            print(f"Unknown account {accountName}")
-            print("Available accounts are:")
-            pp.pprint(self.accountList)
+            if self.verbose:
+                print(f"Unknown account {accountName}")
+                print("Available accounts are:")
+                pp.pprint(self.accountList)
 
     def updateAccountList(self):
-
         if not self._filename:
             accList = []
         else:
@@ -159,7 +159,7 @@ class BankFileSettings(ExternalSettings):
     _settingsName = "bank transaction file"
 
     delimiter = ""
-    beginTable = -1
+    # beginTable = -1
     accountNumber = -1
     bank = -1
     owner = -1
@@ -169,7 +169,6 @@ class BankFileSettings(ExternalSettings):
 
 
 if __name__ == "__main__":
-
     sdb = EconicerSettings(".db\\settings.json")
     sdb.updateAccountList()
     sdb.write()

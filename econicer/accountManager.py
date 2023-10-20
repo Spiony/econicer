@@ -17,13 +17,11 @@ def printSum(transactionDataframe):
     print(f"\n Sum of expenses: {transactionDataframe.value.sum():.2f}")
 
 
-# accuont manager should open the file only once
+# account manager should open the file only once
 class AccountManager:
-
     dbFileName = "history.csv"
 
     def __init__(self, databasePath=".db", settingsPath=".db//settings.json"):
-
         self.db = Path(databasePath)
         self.settingsPath = Path(settingsPath)
 
@@ -38,9 +36,7 @@ class AccountManager:
 
         self.groupSettings = GroupSettings(self.settings.group)
 
-        self.fileIO = FileIO(
-            self.settings.currentAccountFile, self.dbSettings
-        )
+        self.fileIO = FileIO(self.settings.currentAccountFile, self.dbSettings)
 
         if Path(self.settings.currentAccountFile).is_file():
             self.account = self.fileIO.readDB(self.groupSettings)
@@ -77,7 +73,6 @@ class AccountManager:
         return True
 
     def update(self, filepath):
-
         self.makeBackup()
 
         updateFile = FileIO(filepath, self.bankSettings)
@@ -115,7 +110,6 @@ class AccountManager:
         self.fileIO.writeDB(self.account)
 
     def listNoGroups(self, category=None):
-
         if category:
             trans = self.account.transactions[category[0]]
         else:
@@ -130,12 +124,13 @@ class AccountManager:
     def listGroup(self, group):
         pd.set_option("display.max_rows", None)
 
-        transFiltered = self.account.transactions[self.account.transactions["groupID"] == group]
+        transFiltered = self.account.transactions[
+            self.account.transactions["groupID"] == group
+        ]
         print(transFiltered)
         printSum(transFiltered)
 
     def search(self, search, categories):
-
         if categories is None:
             categories = ["usage"]
 
@@ -149,7 +144,6 @@ class AccountManager:
             print("Could not find any matches")
 
     def createPlots(self):
-
         plotDir = Path(self.settings.plotDir)
         if not plotDir.exists():
             plotDir.mkdir(parents=True)
@@ -169,6 +163,8 @@ class AccountManager:
         ep.plotBarsYearly(transactions)
         ep.plotCategoriesYearly(transactions)
 
+        ep.plotCategoriesFlow(transactions)
+
         self.plotPaths = ep.plotPaths
 
     def calculateStatistics(self):
@@ -177,16 +173,14 @@ class AccountManager:
         # yearly average value for each category
 
     def createReport(self):
-
         self.createPlots()
         self.calculateStatistics()
 
         rp = ReportDocument(
-            self.account.owner,
-            self.account.accountNumber,
-            self.account.bank
+            self.account.owner, self.account.accountNumber, self.account.bank
         )
         rp.addOverallSection(self.plotPaths["overall"])
         rp.addStatisticsSection(self.statistics)
         rp.addYearlyReports(self.plotPaths["years"])
+        rp.addFlowSection(self.plotPaths["flow"])
         rp.generatePDF()
