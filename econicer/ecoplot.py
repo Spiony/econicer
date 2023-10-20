@@ -329,5 +329,35 @@ class Ecoplot:
             self.saveFig(fig, filename, 8, 11, True)
             plt.close(fig)
 
-            nestedSet(self.plotPaths, [
-                "years", f"{year}", "monthlyCat"], filename)
+            nestedSet(self.plotPaths, ["years", f"{year}", "monthlyCat"], filename)
+
+    def plotCategoriesFlow(self, transactions: pd.DataFrame):
+        df = transactions
+
+        categories = set(df["groupID"])
+        catDatas = {}
+        for cat in categories:
+            catData = df[df["groupID"] == cat]
+            catData = catData.set_index("date")
+            catData = catData.iloc[::-1]
+            catData = catData["value"].cumsum()
+            catDatas[cat] = catData
+
+        catDatas = {
+            k: v for k, v in sorted(catDatas.items(), key=lambda item: item[1][-1])
+        }
+
+        for cat, catData in catDatas.items():
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+
+            plt.step(x=catData.index, y=catData)
+            plt.xlabel("")
+            plt.ylabel("value / EUR")
+            plt.xticks(rotation=45)
+            plt.title(cat)
+            filename = Path(self.plotDir) / f"ecoCat_{cat}"
+            self.saveFig(fig, filename)
+            plt.close(fig)
+
+            nestedSet(self.plotPaths, ["flow", cat], filename)
