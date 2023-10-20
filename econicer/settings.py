@@ -35,14 +35,16 @@ class Settings(ABC):
 
 
 class DatabaseSettings(Settings):
-
     _settingsName = "Database Settings"
 
     delimiter = ";"
-    owner = 3
-    accountNumber = 4
-    bank = 5
-    beginTable = 11
+    # owner = 3
+    # accountNumber = 4
+    # bank = 5
+    # beginTable = 11
+    owner = "owner"
+    bank = "bank"
+    accountNumber = "account number"
     dateFormat = "%d.%m.%Y"
     table = [
         "date",
@@ -54,7 +56,8 @@ class DatabaseSettings(Settings):
         "saldoCurrency",
         "value",
         "valueCurrency",
-        "groupID"
+        "groupID",
+        "uid",
     ]
     encoding = "utf-8"
 
@@ -65,6 +68,7 @@ class ExternalSettings(Settings):
     _defaultFile = ""
 
     def __init__(self, filename="", verbose=True):
+        self.verbose = verbose
 
         if filename == "":
             self._filename = self._defaultFile
