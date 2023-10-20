@@ -1,6 +1,7 @@
 import csv
 import datetime
 from pathlib import Path
+from typing import List
 
 import pandas as pd
 
@@ -9,16 +10,13 @@ from econicer.account import BankAccount
 
 
 def countKeys(inDict, key):
-
     count = sum([1 for k in inDict.keys() if k.split(".")[0] == key])
     return count
 
 
 def invertDict(singleLayerDict):
-
     invertedDict = {}
     for k, v in singleLayerDict.items():
-
         if v in invertedDict:
             count = countKeys(invertedDict, v)
 
@@ -29,10 +27,22 @@ def invertDict(singleLayerDict):
     return invertedDict
 
 
+def getKeywordValue(lines: List[str], keyword: str, sep: str):
+    for line in lines:
+        if not len(line):
+            continue
+
+        data = line.split(sep)
+
+        if data[0] == keyword:
+            value = data[1].strip()
+            return value
+
+    return None
+
+
 class FileIO:
-
     def __init__(self, filepath, settings, str2numConversion=True):
-
         self.filepath = filepath
         self.settings = settings
         self.str2numConversion = str2numConversion
@@ -43,28 +53,30 @@ class FileIO:
     def readHeader(self):
         """extract header account information from database"""
         with open(self.filepath) as csvFile:
-            header = [next(csvFile)
-                      for x in range(self.settings.beginTable)]
+            header = [next(csvFile) for x in range(20)]
 
-        owner = header[self.settings.owner].split(
-            self.settings.delimiter)[1].replace("\n", "")
+        sep = self.settings.delimiter
 
-        accountNumber = header[self.settings.accountNumber].split(
-            self.settings.delimiter)[1].replace("\n", "")
-
-        bank = header[self.settings.bank].split(
-            self.settings.delimiter)[1].replace("\n", "")
+        owner = getKeywordValue(header, self.settings.owner, sep)
+        accountNumber = getKeywordValue(header, self.settings.accountNumber, sep)
+        bank = getKeywordValue(header, self.settings.bank, sep)
 
         return owner, accountNumber, bank
 
     def readBody(self):
+        with open(self.filepath, "r") as f:
+            noSeps = []
+            for _ in range(20):
+                linedata = f.readline()
+                noSeps.append(linedata.count(";"))
+        noHeaderLines = noSeps.index(max(noSeps))
 
         transactionDF = pd.read_csv(
             self.filepath,
             sep=self.settings.delimiter,
-            header=self.settings.beginTable,
+            header=noHeaderLines,
             skip_blank_lines=False,
-            encoding=self.settings.encoding
+            encoding=self.settings.encoding,
         )
 
         if isinstance(self.settings.table, dict):
@@ -72,10 +84,12 @@ class FileIO:
             transactionDF = transactionDF.rename(columns=renameTable)
 
         transactionDF["date"] = pd.to_datetime(
-            transactionDF["date"], format=self.settings.dateFormat)
+            transactionDF["date"], format=self.settings.dateFormat
+        )
 
         transactionDF["valuta"] = pd.to_datetime(
-            transactionDF["valuta"], format=self.settings.dateFormat)
+            transactionDF["valuta"], format=self.settings.dateFormat
+        )
 
         if self.str2numConversion:
             transactionDF["value"] = transactionDF["value"].apply(str2num)
@@ -100,15 +114,14 @@ class FileIO:
                 csvfile,
                 delimiter=self.settings.delimiter,
                 quotechar="'",
-                quoting=csv.QUOTE_MINIMAL
+                quoting=csv.QUOTE_MINIMAL,
             )
 
             # Write header
             csvwriter.writerow(["##ECONICER DATABASE"])
-            csvwriter.writerow([
-                datetime.datetime.now().strftime(
-                    "File created at %Y-%m-%d %H:%M:%S")
-            ])
+            csvwriter.writerow(
+                [datetime.datetime.now().strftime("File created at %Y-%m-%d %H:%M:%S")]
+            )
             csvwriter.writerow(["#GENERALINFO"])
             csvwriter.writerow(["owner", account.owner])
             csvwriter.writerow(["account number", account.accountNumber])
@@ -122,8 +135,8 @@ class FileIO:
         # write table
         account.transactions.to_csv(
             filepath,
-            mode='a',
+            mode="a",
             sep=self.settings.delimiter,
             index=False,
-            date_format=self.settings.dateFormat
+            date_format=self.settings.dateFormat,
         )
