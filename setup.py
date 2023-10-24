@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="econicer",
-    version="0.23",
+    version="0.25",
     author="spiony",
     author_email="glumt@protonmail.com",
     description="A small program to analyse financial transactions",
@@ -20,14 +20,14 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     ],
     packages=find_packages(),
     python_requires=">=3.8",
     install_requires=[
-        'matplotlib>=3.4.1',
-        'PyLaTeX>=1.4.1',
-        'pandas>=1.2.3',
+        "matplotlib>=3.4.1",
+        "PyLaTeX>=1.4.1",
+        "pandas>=1.2.3",
     ],
     include_package_data=True,
 )
