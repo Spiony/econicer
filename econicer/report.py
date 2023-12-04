@@ -1,11 +1,22 @@
+import datetime
+import numpy as np
+import pandas as pd
 import pylatex as tex
+from pylatex import Tabularx, Package, Center
+from pylatex.basic import Environment
 from itertools import islice
+
+tex.table.COLUMN_LETTERS.update({"R"})
 
 
 def chunks(data, size):
     it = iter(data)
     for _ in range(0, len(data), size):
         yield {k: data[k] for k in islice(it, size)}
+
+
+class Landscape(Environment):
+    pass
 
 
 class ReportDocument:
@@ -16,8 +27,8 @@ class ReportDocument:
 
         geometry_options = {
             "tmargin": "35mm",
-            "lmargin": "25mm",
-            "textwidth": "160mm",
+            "lmargin": "20mm",
+            "textwidth": "170mm",
             "textheight": "237mm",
         }
 
@@ -28,6 +39,8 @@ class ReportDocument:
             geometry_options=geometry_options,
             lmodern=False,
         )
+        self.doc.preamble.append(Package("lscape"))
+        self.doc.preamble.append(Package("pdflscape"))
         self.doc.preamble.append(
             tex.NoEscape(r"\renewcommand{\familydefault}{\sfdefault}")
         )
@@ -36,15 +49,21 @@ class ReportDocument:
             tex.Command("usepackage", arguments="placeins", options="section")
         )
 
+        self.doc.preamble.append(
+            tex.UnsafeCommand(
+                "newcolumntype",
+                arguments="R",
+                extra_arguments=tex.NoEscape(r">{\raggedleft\arraybackslash}X"),
+            )
+        )
+
         self.addHeader()
 
         self.doc.preamble.append(tex.Command("title", "Financial Report"))
-        # self.doc.preamble.append(Command('bank', 'Anonymous author'))
         self.doc.preamble.append(tex.Command("date", tex.NoEscape(r"\today")))
-        # \usepackage[section]{placeins}
 
     def generatePDF(self):
-        self.doc.generate_pdf(compiler="xelatex", clean_tex=False)
+        self.doc.generate_pdf(compiler="pdflatex", clean_tex=False)
 
     def addHeader(self):
         # Add document header
@@ -109,14 +128,14 @@ class ReportDocument:
                     if (i + 1) % 2 == 0:
                         self.doc.append(tex.LineBreak())
 
-    def addYearlyReports(self, plotPaths):
+    def addYearlyReports(self, plotPaths, transactions):
         for i, (year, paths) in enumerate(plotPaths.items()):
-            self.addYearSection(year, paths)
+            self.addYearSection(year, paths, transactions)
 
             if (i + 1) % 2 == 0:
                 self.doc.append(tex.Command("newpage"))
 
-    def addYearSection(self, year, plotPaths):
+    def addYearSection(self, year, plotPaths, transactions):
         """Define plots for the yearly section"""
 
         title = f"Financial Report {year}"
@@ -127,6 +146,55 @@ class ReportDocument:
         }
 
         self.addSection(title, plotDict=plots, plotPaths=plotPaths)
+
+        categories = list(set(transactions["groupID"]))
+
+        # add table
+        monthTrans = pd.pivot_table(
+            transactions,
+            index=transactions["date"].dt.strftime("%Y-%m"),
+            columns=transactions["groupID"],
+            values="value",
+            aggfunc=np.sum,
+        )
+        monthTrans.index = pd.to_datetime(monthTrans.index)
+        transInYear = monthTrans[f"{year}-01-01":f"{year}-12-31"]
+
+        header = [""]
+        for m in range(1, 13):
+            header.append(
+                datetime.datetime(day=1, month=m, year=int(year)).strftime(r"%b")
+            )
+        header.append("Total")
+
+        self.doc.append(tex.Command("scriptsize"))
+        tableSpec = "l" + "R" * 13
+
+        with self.doc.create(Landscape()):
+            with self.doc.create(Center()) as centered:
+                with centered.create(
+                    Tabularx(tableSpec, width_argument=tex.NoEscape(r"\linewidth"))
+                ) as table:
+                    table.add_hline()
+                    table.add_row(header)
+                    table.add_hline()
+                    for cat in categories:
+                        line = []
+                        line.append(cat)
+                        for m in range(1, 13):
+                            value = monthTrans[
+                                f"{year}-{m:02d}-01":f"{year}-{m:02d}-02"
+                            ]
+
+                            if value.empty:
+                                line.append(0)
+                                continue
+                            value = f"{value[cat].to_list()[0]:.2f}"
+                            line.append(value)
+                        line.append(f"{np.sum(transInYear[cat]):.2f}")
+                        line = [tex.NoEscape(ln) for ln in line]
+                        table.add_row(line)
+                    table.add_hline()
 
     def addFlowSection(self, plotPaths):
         """Define plots for the yearly section"""

@@ -181,6 +181,6 @@ class AccountManager:
         )
         rp.addOverallSection(self.plotPaths["overall"])
         rp.addStatisticsSection(self.statistics)
-        rp.addYearlyReports(self.plotPaths["years"])
+        rp.addYearlyReports(self.plotPaths["years"], self.account.transactions)
         rp.addFlowSection(self.plotPaths["flow"])
         rp.generatePDF()
