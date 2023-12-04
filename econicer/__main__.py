@@ -1,12 +1,19 @@
 import argparse
 import sys
 from pathlib import Path
+import logging
 
 from econicer.accountManager import AccountManager
 from econicer.settings import EconicerSettings
 
 
 def main():
+    logging.basicConfig(
+        level=logging.DEBUG,
+        filename="app.log",
+        filemode="w",
+        format="%(name)s - %(levelname)s: %(message)s",
+    )
 
     # command line arguments
     parser = argparse.ArgumentParser(
@@ -16,84 +23,52 @@ def main():
         " /  __/ /__/ /_/ / / / / / /__/  __/ /\n"
         " \\___/\\___/\\____/_/ /_/_/\\___/\\___/_/\n\n"
         " a perception of economic success",
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
 
     parser.add_argument(
-        "-i",
-        "--init",
-        metavar="NAME",
-        help="initialize new account",
-        default=""
+        "-i", "--init", metavar="NAME", help="initialize new account", default=""
     )
     parser.add_argument(
         "-c",
         "--change",
         metavar="NAME",
         help="change account or create new",
-        default=""
+        default="",
     )
-    parser.add_argument(
-        "-a",
-        "--add",
-        metavar="FILE",
-        help="add to current account"
-    )
+    parser.add_argument("-a", "--add", metavar="FILE", help="add to current account")
     parser.add_argument(
         "-s",
         "--search",
         metavar="KEYWORD",
         help="Search for specified keyword in category 'usage' and lists sum of expenses",
-        default=""
+        default="",
     )
     parser.add_argument(
         "-k",
         "--category",
         metavar="CATEGORY",
         help="Categories to search in",
-        nargs="+"
+        nargs="+",
     )
     parser.add_argument(
-        "-l",
-        "--listGroup",
-        metavar="GROUP",
-        help="display current settings"
+        "-l", "--listGroup", metavar="GROUP", help="display current settings"
     )
     parser.add_argument(
-        "-ls",
-        "--listSettings",
-        help="display current settings",
-        action="store_true"
+        "-ls", "--listSettings", help="display current settings", action="store_true"
     )
     parser.add_argument(
         "-n",
         "--listNoGroup",
         help="List all transactions without a group",
-        action="store_true"
+        action="store_true",
     )
     parser.add_argument(
-        "-u",
-        "--undo",
-        help="Undo last change on database",
-        action="store_true"
+        "-u", "--undo", help="Undo last change on database", action="store_true"
     )
-    parser.add_argument(
-        "-g",
-        "--group",
-        help="regroup database",
-        action="store_true"
-    )
-    parser.add_argument(
-        "-p",
-        "--plot",
-        help="make plots",
-        action="store_true"
-    )
-    parser.add_argument(
-        "-r",
-        "--report",
-        help="automated report",
-        action="store_true"
-    )
+    parser.add_argument("-g", "--group", help="regroup database", action="store_true")
+    parser.add_argument("-p", "--plot", help="make plots", action="store_true")
+    parser.add_argument("-r", "--report", help="automated report", action="store_true")
 
     args = parser.parse_args()
 

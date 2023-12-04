@@ -1,4 +1,5 @@
 import base64
+import logging
 import re
 import hashlib
 import pandas as pd
@@ -38,6 +39,7 @@ class BankAccount:
         self.transactions.reset_index(drop=True, inplace=True)
 
     def groupTransactions(self):
+        logger = logging.getLogger()
         # reset groups
         self.transactions.loc[:, "groupID"] = "None"
 
@@ -51,12 +53,17 @@ class BankAccount:
                 )
 
                 if matches.empty:
+                    logger.info(f"Found no match for {grpList}")
                     continue
 
                 ids = list(matches.index.droplevel(1).values)
-                occupiedIds = list(self.transactions.loc[ids, "groupID"] == "None")
-                ids = [i for i, b in zip(ids, occupiedIds) if b]
+                freeIds = list(self.transactions.loc[ids, "groupID"] == "None")
+                ids = [i for i, b in zip(ids, freeIds) if b]
                 self.transactions.loc[ids, "groupID"] = grpName
+                for id in ids:
+                    data = self.transactions.loc[id]
+                    trans = f'{data["customer"]} \'{data["usage"]}\' {data["value"]} ({data["valuta"].strftime("%d.%m.%Y")})'
+                    logger.info(f"Match {trans} to group: {grpName}")
 
         self.addIdentifier()
 
