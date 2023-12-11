@@ -155,6 +155,7 @@ class GroupSettings(ExternalSettings):
 
     dbIdentifier = []
     groups = {}
+    groupTypes = {}
 
 
 class BankFileSettings(ExternalSettings):

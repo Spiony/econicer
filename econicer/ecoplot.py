@@ -5,6 +5,7 @@ import numpy as np
 import os
 from pathlib import Path
 from dataclasses import dataclass
+from itertools import cycle
 
 plt.style.use(os.path.join(os.path.dirname(__file__), "glumt.mplrc"))
 
@@ -107,9 +108,9 @@ class Ecoplot:
         outgoingTransactions = transactions[ids]
         self.plotPie(outgoingTransactions, "pie_outgoing")
 
-    def plotCategories(self, transactions):
+    def plotCategories(self, transactions: pd.DataFrame):
         absGroupVal = transactions.pivot_table(
-            values=["value"], index=["groupID"], aggfunc={"value": np.sum}
+            values=["value"], index=["groupID"], aggfunc="sum"
         )
 
         fig = plt.figure()
@@ -173,24 +174,81 @@ class Ecoplot:
 
         self.plotPaths["overall"].update({plotName: filename})
 
-    def plotBarsYearly(self, transactions):
+    def plotBarsYearly(self, transactions: pd.DataFrame, groupTypes: dict):
         """Show total in and out per month over a year"""
         df = transactions
-        posSum, negSum = calcPosNegSums(df)
+        groups = list(set(df["groupID"].to_list()))
 
-        minSaldo = negSum.min().min()
-        maxSaldo = posSum.max().max()
+        fixedCostKeys = [k for k, v in groupTypes.items() if v == "fixed"]
+        variableCostKeys = [k for k in groups if k not in fixedCostKeys]
 
-        years = posSum.columns
+        fixedCostTransactions = df.loc[df["groupID"].isin(fixedCostKeys)]
+        variableCostTransactions = df.loc[df["groupID"].isin(variableCostKeys)]
+
+        posSumF, negSumF = calcPosNegSums(fixedCostTransactions)
+        posSumV, negSumV = calcPosNegSums(variableCostTransactions)
+        stackedData = {
+            "pos": [posSumF, posSumV],
+            "neg": [negSumF, negSumV],
+        }
+
+        maxSaldo = (
+            max(
+                [
+                    s.max().max()
+                    for s in [posSumF, posSumV, negSumF, negSumV]
+                    if not s.empty
+                ]
+            )
+            * 2
+        )
+
+        gap = 0.02
+        barWidth = 0.25
+        years = list({d.year for d in transactions["date"]})
+        years.sort()
+        months = np.arange(1, 13)
+        subLabel = ["fixed", "variable"]
+
         for y in years:
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            yearDF = pd.concat(
-                [posSum.loc[:, y].rename("in"), negSum.loc[:, y].rename("out")], axis=1
-            )
-            yearDF.plot.bar(ax=ax)
-            ax.set_ylim([minSaldo * 1.1, maxSaldo * 1.1])
+
+            bottom = np.zeros(12)
+            for sl, weight_count in zip(cycle(subLabel), stackedData["pos"]):
+                if y not in weight_count.columns:
+                    continue
+                if weight_count.empty:
+                    continue
+                data = weight_count.loc[:, y]
+                p = ax.bar(
+                    months - barWidth / 2 - gap,
+                    data,
+                    barWidth,
+                    label=f"in - {sl}",
+                    bottom=bottom,
+                )
+                bottom += data
+
+            bottom = np.zeros(12)
+            for sl, weight_count in zip(cycle(subLabel), stackedData["neg"]):
+                if y not in weight_count.columns:
+                    continue
+                if weight_count.empty:
+                    continue
+                data = weight_count.loc[:, y]
+                p = ax.bar(
+                    months + barWidth / 2 + gap,
+                    data,
+                    barWidth,
+                    label=f"out - {sl}",
+                    bottom=bottom,
+                )
+                bottom += data
+
+            ax.set_ylim([0, maxSaldo * 1.1])
             plt.ylabel("summation / EUR")
+            plt.legend()
             filename = Path(self.plotDir) / f"ecoYearTest{y}"
             self.saveFig(fig, filename)
             plt.close(fig)
@@ -204,7 +262,7 @@ class Ecoplot:
             index=df["date"].dt.year,
             columns=df["groupID"],
             values="value",
-            aggfunc=np.sum,
+            aggfunc="sum",
         )
 
         years = yearTrans.index
@@ -361,3 +419,6 @@ class Ecoplot:
             plt.close(fig)
 
             nestedSet(self.plotPaths, ["flow", cat], filename)
+
+        def plotCategoriesPerMonth(self, transactions):
+            pass

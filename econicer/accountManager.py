@@ -161,7 +161,7 @@ class AccountManager:
         ep.plotPieSplit(transactions)
         ep.plotBars(transactions)
         ep.plotCategories(transactions)
-        ep.plotBarsYearly(transactions)
+        ep.plotBarsYearly(transactions, self.groupSettings.groupTypes)
         ep.plotCategoriesYearly(transactions)
 
         ep.plotCategoriesFlow(transactions)
