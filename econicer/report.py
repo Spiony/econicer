@@ -2,8 +2,9 @@ import datetime
 import numpy as np
 import pandas as pd
 import pylatex as tex
-from pylatex import Tabularx, Package, Center
+from pylatex import Tabularx, Package, Center, Table
 from pylatex.basic import Environment
+from pylatex.base_classes import CommandBase
 from itertools import islice
 
 tex.table.COLUMN_LETTERS.update({"R"})
@@ -156,6 +157,7 @@ class ReportDocument:
             columns=transactions["groupID"],
             values="value",
             aggfunc=np.sum,
+            fill_value=0,
         )
         monthTrans.index = pd.to_datetime(monthTrans.index)
         transInYear = monthTrans[f"{year}-01-01":f"{year}-12-31"]
@@ -171,13 +173,16 @@ class ReportDocument:
         tableSpec = "l" + "R" * 13
 
         with self.doc.create(Landscape()):
-            with self.doc.create(Center()) as centered:
-                with centered.create(
+            # with self.doc.create(Center()) as centered:
+            with self.doc.create(Table(position="h!")) as table:
+                # with centered.create(
+                table.append(tex.Command("scriptsize"))
+                with self.doc.create(
                     Tabularx(tableSpec, width_argument=tex.NoEscape(r"\linewidth"))
-                ) as table:
-                    table.add_hline()
-                    table.add_row(header)
-                    table.add_hline()
+                ) as tabular:
+                    tabular.add_hline()
+                    tabular.add_row(header)
+                    tabular.add_hline()
                     for cat in categories:
                         line = []
                         line.append(cat)
@@ -193,8 +198,9 @@ class ReportDocument:
                             line.append(value)
                         line.append(f"{np.sum(transInYear[cat]):.2f}")
                         line = [tex.NoEscape(ln) for ln in line]
-                        table.add_row(line)
-                    table.add_hline()
+                        tabular.add_row(line)
+                    tabular.add_hline()
+                table.add_caption(f"Category overview for year {year}")
 
     def addFlowSection(self, plotPaths):
         """Define plots for the yearly section"""
