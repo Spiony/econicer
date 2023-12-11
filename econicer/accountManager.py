@@ -109,6 +109,12 @@ class AccountManager:
         self.account.groupTransactions()
         self.fileIO.writeDB(self.account)
 
+    def printTransactions(self, transactions):
+        pd.set_option("display.max_rows", None)
+        pd.set_option("display.max_colwidth", None)
+        print(transactions[["date", "customer", "usage", "saldo", "value", "groupID"]])
+        printSum(transactions)
+
     def listNoGroups(self, category=None):
         if category:
             trans = self.account.transactions[category[0]]
@@ -118,17 +124,13 @@ class AccountManager:
         if noGrp.empty:
             print("All transactions are grouped.")
         else:
-            print(noGrp)
-            printSum(noGrp)
+            self.printTransactions(noGrp)
 
     def listGroup(self, group):
-        pd.set_option("display.max_rows", None)
-
         transFiltered = self.account.transactions[
             self.account.transactions["groupID"] == group
         ]
-        print(transFiltered)
-        printSum(transFiltered)
+        self.printTransactions(transFiltered)
 
     def search(self, search, categories):
         if categories is None:
@@ -138,8 +140,7 @@ class AccountManager:
         result = self.account.search(search, categories)
 
         if result is not None:
-            print(result)
-            printSum(result)
+            self.printTransactions(result)
         else:
             print("Could not find any matches")
 
