@@ -40,6 +40,8 @@ class AccountManager:
 
         if Path(self.settings.currentAccountFile).is_file():
             self.account = self.fileIO.readDB(self.groupSettings)
+            self.account.checkSaldoTrace()
+
         else:
             self.account = None
 
@@ -91,6 +93,22 @@ class AccountManager:
         if self.account.bank != updateAcc.bank:
             print("WARNING! Bank institute is mismatching")
 
+        startDate = updateAcc.transactions["date"].iloc[-1]
+        endDate = updateAcc.transactions["date"].iloc[0]
+        print(f"adding transaction data from {startDate} to {endDate}")
+
+        if not self.account.transactions.empty:
+            startDateHistory = self.account.transactions["date"].iloc[-1]
+            endDateHistory = self.account.transactions["date"].iloc[0]
+            if startDate > endDateHistory:
+                print(
+                    "Warning! New dataset does not start in the known date range. There might be a gap in the datasets"
+                )
+            if endDateHistory > endDate:
+                print(
+                    "The date timestamps indicate that the dataset is already included. The program will stop now"
+                )
+                exit()
         self.account.update(updateAcc.transactions)
 
         self.fileIO.writeDB(self.account)
