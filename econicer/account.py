@@ -9,6 +9,20 @@ from dataclasses import dataclass
 from econicer.settings import EconicerSettings
 
 
+def addIdentifier(transactions):
+    idComponents = ["date", "customer", "usage", "type", "saldo", "value"]
+
+    idColumns = pd.concat([transactions[col] for col in idComponents], axis=1)
+    idColumns["date"] = idColumns["date"].dt.strftime("%Y-%m-%d")
+
+    tuples = idColumns.apply(lambda row: tuple(row), axis=1)
+    tuples = tuples.astype(str).str.encode("UTF-8")
+
+    transactions["uid"] = tuples.apply(
+        lambda x: base64.b64encode(hashlib.sha1(x).digest()).decode()
+    )
+
+
 @dataclass
 class BankAccount:
     owner: str
@@ -28,6 +42,11 @@ class BankAccount:
         "value",
         "valueCurrency",
     ]
+
+    def __post_init__(self):
+        if not len(self.transactions):
+            return
+        addIdentifier(self.transactions)
 
     def update(self, transactionDataframe):
         self.transactions = pd.concat([self.transactions, transactionDataframe])
@@ -65,20 +84,7 @@ class BankAccount:
                     trans = f'{data["customer"]} \'{data["usage"]}\' {data["value"]} ({data["valuta"]})'
                     logger.info(f"Match {trans} to group: {grpName}")
 
-        self.addIdentifier()
-
-    def addIdentifier(self):
-        idComponents = ["date", "customer", "usage", "type", "value"]
-
-        idColumns = pd.concat([self.transactions[col] for col in idComponents], axis=1)
-        idColumns["date"] = idColumns["date"].dt.strftime("%Y-%m-%d")
-
-        tuples = idColumns.apply(lambda row: tuple(row), axis=1)
-        tuples = tuples.astype(str).str.encode("UTF-8")
-
-        self.transactions["uid"] = tuples.apply(
-            lambda x: base64.b64encode(hashlib.sha1(x).digest()).decode()
-        )
+        addIdentifier(self.transactions)
 
     def search(self, search, categories):
         keyword = rf"({search})"
