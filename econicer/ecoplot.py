@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from dataclasses import dataclass
 from itertools import cycle
+from datetime import datetime
 
 plt.style.use(os.path.join(os.path.dirname(__file__), "glumt.mplrc"))
 
@@ -422,3 +423,57 @@ class Ecoplot:
 
         def plotCategoriesPerMonth(self, transactions):
             pass
+
+    def sankeyPlot(self, transactions: pd.DataFrame):
+        import plotly.graph_objects as go
+
+        years = list(set(transactions["date"].dt.year))
+
+        for year in years:
+            check = year == transactions["date"].dt.year
+            print(check)
+            yearSlice = transactions[check]
+
+            income = yearSlice[transactions["value"] > 0]
+            out = yearSlice[transactions["value"] < 0]
+
+            source = []
+            target = []
+            value = []
+            labels = []
+            incomeGroups = set(income["groupID"])
+            sumId = len(incomeGroups)
+            for i, id in enumerate(incomeGroups):
+                sel = income[income["groupID"] == id]
+                labels.append(id)
+                source.append(i)
+                target.append(sumId)
+                value.append(sel["value"].sum())
+            labels.append("total")
+
+            outGroups = set(out["groupID"])
+            for i, id in enumerate(outGroups):
+                labels.append(id)
+                sel = out[out["groupID"] == id]
+                source.append(sumId)
+                target.append(sumId + 1 + i)
+                value.append(abs(sel["value"].sum()))
+
+            fig = go.Figure(
+                data=[
+                    go.Sankey(
+                        node=dict(
+                            pad=15,
+                            thickness=20,
+                            line=dict(color="black", width=0.5),
+                            label=labels,
+                            # color="blue",
+                        ),
+                        link=dict(source=source, target=target, value=value),
+                    )
+                ]
+            )
+
+            fig.update_layout(title_text=f"Sankey Diagram {year}", font_size=10)
+            filename = Path(self.plotDir) / f"sankey_{year}.pdf"
+            fig.write_image(filename)

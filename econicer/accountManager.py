@@ -176,6 +176,7 @@ class AccountManager:
         ep.plotCategoriesRatioMonthly(transactions)
         ep.plotCategoriesMonthly(transactions)
         """
+        ep.sankeyPlot(transactions)
         ep.plotHbarSplit(transactions)
         ep.plotTimeline(transactions)
         ep.plotPieSplit(transactions)
