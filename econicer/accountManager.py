@@ -167,7 +167,9 @@ class AccountManager:
         if not plotDir.exists():
             plotDir.mkdir(parents=True)
 
-        transactions = self.account.transactions
+        transactions = self.account.transactions.copy()
+        transactions["value"] = transactions["value"] / 100
+        transactions["saldo"] = transactions["saldo"] / 100
 
         ep = Ecoplot(str(plotDir))
         """
@@ -200,6 +202,9 @@ class AccountManager:
         )
         rp.addOverallSection(self.plotPaths["overall"])
         rp.addStatisticsSection(self.statistics)
-        rp.addYearlyReports(self.plotPaths["years"], self.account.transactions)
+        transactions = self.account.transactions.copy()
+        transactions["value"] = transactions["value"] / 100
+        transactions["saldo"] = transactions["saldo"] / 100
+        rp.addYearlyReports(self.plotPaths["years"], transactions)
         rp.addFlowSection(self.plotPaths["flow"])
         rp.generatePDF()
