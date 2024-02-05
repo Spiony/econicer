@@ -48,13 +48,43 @@ class BankAccount:
             return
         addIdentifier(self.transactions)
 
+    def checkSaldoTrace(self):
+        saldo = self.transactions["saldo"]
+        values = self.transactions["value"]
+
+        calcSaldo = values.iloc[::-1].cumsum().iloc[::-1]
+
+        if not saldo.equals(calcSaldo):
+            diff = calcSaldo - saldo
+            start = diff[diff != 0].index
+
+            t = self.transactions.iloc[start[-1]]
+            t2 = self.transactions.iloc[start[-1] + 1]
+            print(
+                f"Warning! Saldo trace is inconsistent. First inconsistent transaction from {t['date']}"
+            )
+            print(f"Saldo difference: {diff[start[-1]] / 100}")
+            print(t)
+            print(t2)
+            exit()
+
     def update(self, transactionDataframe):
-        self.transactions = pd.concat([self.transactions, transactionDataframe])
+        addIdentifier(transactionDataframe)
+        if not self.transactions.empty:
+            overlapUid = transactionDataframe.iloc[-1]["uid"]
+            overlapIndex = self.transactions[
+                self.transactions["uid"] == overlapUid
+            ].index
+            base = self.transactions.drop(range(overlapIndex[0] + 1))
+        else:
+            base = self.transactions
+        mergedDf = pd.concat([transactionDataframe, base])
+        mergedDf.reset_index(drop=True, inplace=True)
 
-        self.transactions = self.transactions.sort_values("date", ascending=False)
+        self.transactions = mergedDf
+        self.checkSaldoTrace()
+
         self.groupTransactions()
-
-        self.transactions.drop_duplicates(subset=["uid"], inplace=True)
         self.transactions.reset_index(drop=True, inplace=True)
 
     def groupTransactions(self):
