@@ -30,4 +30,7 @@ setup(
         "pandas>=1.2.3",
     ],
     include_package_data=True,
+    entry_points={
+        "console_scripts": ["econicer = econicer.cli:main"],
+    },
 )
