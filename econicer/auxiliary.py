@@ -39,7 +39,7 @@ def endOfYear(date):
 
 def str2num(stringInput):
     if isinstance(stringInput, int):
-        return stringInput * 100
+        return stringInput
 
     if isinstance(stringInput, float):
         return int(stringInput * 100)
