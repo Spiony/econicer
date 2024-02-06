@@ -2,13 +2,13 @@ import matplotlib.pyplot as plt
 from cycler import cycler
 import pandas as pd
 import numpy as np
-import os
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import cycle
-from datetime import datetime
+from enum import Enum, auto
+from typing import List, Union
 
-plt.style.use(os.path.join(os.path.dirname(__file__), "glumt.mplrc"))
+plt.style.use(Path(__file__).parent / "glumt.mplrc")
 
 
 def nestedSet(dic, keys, value):
@@ -47,13 +47,67 @@ class PlotOptions:
     formats = ["pdf", "png"]
 
 
+OVERALL_TAG = "OVERALL"
+
+
+class StrEnum(str, Enum):
+
+    @staticmethod
+    def _generate_next_value_(
+        name: str, start: int, count: int, last_values: list
+    ) -> str:
+        return name
+
+
+class PlotType(StrEnum):
+    TIMELINE = auto()
+    CATEGORY = auto()
+    CATEGORY_FLOW = auto()
+    CATEGORY_MONTHS = auto()
+    CATEGORY_RATIO = auto()
+    CATEGORY_RATIO_LEGEND = auto()
+    PIE_IN = auto()
+    PIE_OUT = auto()
+    BAR = auto()
+    HBAR_IN = auto()
+    HBAR_OUT = auto()
+    SANKEY = auto()
+
+    def __str__(self) -> str:
+        return self.value
+
+
 @dataclass
-class Ecoplot:
-    plotDir: str
+class PlotRef:
+    dir: Path
+    type: PlotType
+    context: Union[str, int]
+    format: str = "pdf"
+
+    @property
+    def name(self):
+        return f"{self.type}_{self.context}.{self.format}"
+
+    @property
+    def path(self):
+        return self.dir / self.name
+
+
+@dataclass
+class EcoPlot:
+    plotDir: Path
     plotOptions = PlotOptions(3.14, 2.355)
+    reg: List[PlotRef] = field(default_factory=list)
     plotPaths = {"overall": {}, "years": {}}
 
-    def saveFig(self, fig, filename, width=None, height=None, skipTight=False):
+    def saveFig(
+        self,
+        fig: plt.Figure,
+        filename: str,
+        width: float = None,
+        height: float = None,
+        skipTight: bool = False,
+    ):
         if not width:
             width = self.plotOptions.width
 
@@ -68,6 +122,10 @@ class Ecoplot:
             fig.savefig(f"{filename}.{filetype}", dpi=600)
 
     def plotTimeline(self, transactions):
+        ref = PlotRef(self.plotDir, PlotType.TIMELINE, OVERALL_TAG)
+        self.reg.append(ref)
+        filename = ref.path
+
         timeline = transactions[["date", "saldo"]]
         timeline = timeline.iloc[::-1]
 
@@ -77,13 +135,14 @@ class Ecoplot:
         plt.ylabel("Saldo / EUR")
         plt.xticks(rotation=45)
 
-        filename = Path(self.plotDir) / "ecoTimeline"
         self.saveFig(fig, filename)
         plt.close(fig)
 
-        self.plotPaths["overall"].update({"timeline": filename})
+    def plotPie(self, transactions, plotType):
+        ref = PlotRef(self.plotDir, plotType, OVERALL_TAG)
+        self.reg.append(ref)
+        filename = ref.path
 
-    def plotPie(self, transactions, plotName="pie"):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         d = transactions["groupID"].value_counts()
@@ -94,22 +153,24 @@ class Ecoplot:
         d.plot.pie(y="value", figsize=(5, 5), ax=ax, legend=False)
         plt.ylabel("")
 
-        filename = Path(self.plotDir) / f"ecoPie_{plotName}"
         self.saveFig(fig, filename)
         plt.close(fig)
 
-        self.plotPaths["overall"].update({plotName: filename})
-
     def plotPieSplit(self, transactions):
+
         ids = transactions["value"] > 0
         incomingTransactions = transactions[ids]
-        self.plotPie(incomingTransactions, "pie_income")
+        self.plotPie(incomingTransactions, PlotType.PIE_IN)
 
         ids = ~ids
         outgoingTransactions = transactions[ids]
-        self.plotPie(outgoingTransactions, "pie_outgoing")
+        self.plotPie(outgoingTransactions, PlotType.PIE_OUT)
 
     def plotCategories(self, transactions: pd.DataFrame):
+        ref = PlotRef(self.plotDir, PlotType.CATEGORY, OVERALL_TAG)
+        self.reg.append(ref)
+        filename = ref.path
+
         absGroupVal = transactions.pivot_table(
             values=["value"], index=["groupID"], aggfunc="sum"
         )
@@ -119,13 +180,14 @@ class Ecoplot:
         absGroupVal.plot.barh(y="value", ax=ax, legend=False)
         plt.xlabel("summation / EUR")
         plt.ylabel("")
-        filename = Path(self.plotDir) / "ecoNettoHbarTotal"
         self.saveFig(fig, filename)
         plt.close(fig)
 
-        self.plotPaths["overall"].update({"categories": filename})
-
     def plotBars(self, transactions):
+        ref = PlotRef(self.plotDir, PlotType.BAR, OVERALL_TAG)
+        self.reg.append(ref)
+        filename = ref.path
+
         df = transactions
         posSum, negSum = calcPosNegSums(df)
 
@@ -138,11 +200,10 @@ class Ecoplot:
         plt.ylabel("summation / EUR")
         plt.xticks(rotation=45)
         # ax.set_ylim([minSaldo*1.1, maxSaldo*1.1])
-        filename = Path(self.plotDir) / "ecoYearTotal"
         self.saveFig(fig, filename)
         plt.close(fig)
 
-        self.plotPaths["overall"].update({"years": filename})
+        # self.plotPaths["overall"].update({"years": filename})
 
     def splitTransactions(self, transactions):
         ids = transactions["value"] > 0
@@ -155,10 +216,14 @@ class Ecoplot:
             transactions
         )
 
-        self.plotHbar(incomingTransactions, "hbar_incoming")
-        self.plotHbar(outgoingTransactions, "hbar_outgoing")
+        self.plotHbar(incomingTransactions, PlotType.HBAR_IN)
+        self.plotHbar(outgoingTransactions, PlotType.HBAR_OUT)
 
-    def plotHbar(self, transactions, plotName):
+    def plotHbar(self, transactions, plotType):
+        ref = PlotRef(self.plotDir, plotType, OVERALL_TAG)
+        self.reg.append(ref)
+        filename = ref.path
+
         absGroupVal = transactions.pivot_table(
             values=["value"], index=["groupID"], aggfunc={"value": np.sum}
         )
@@ -169,11 +234,8 @@ class Ecoplot:
         absGroupVal.plot.barh(y="value", ax=ax, legend=False)
         plt.xlabel("summation / EUR")
         plt.ylabel("")
-        filename = Path(self.plotDir) / f"eco_{plotName}"
         self.saveFig(fig, filename)
         plt.close(fig)
-
-        self.plotPaths["overall"].update({plotName: filename})
 
     def plotBarsYearly(self, transactions: pd.DataFrame, groupTypes: dict):
         """Show total in and out per month over a year"""
@@ -212,6 +274,10 @@ class Ecoplot:
         subLabel = ["fixed", "variable"]
 
         for y in years:
+            ref = PlotRef(self.plotDir, PlotType.BAR, y)
+            self.reg.append(ref)
+            filename = ref.path
+
             fig = plt.figure()
             ax = fig.add_subplot(111)
 
@@ -250,11 +316,11 @@ class Ecoplot:
             ax.set_ylim([0, maxSaldo * 1.1])
             plt.ylabel("summation / EUR")
             plt.legend()
-            filename = Path(self.plotDir) / f"ecoYearTest{y}"
+            # filename = Path(self.plotDir) / f"ecoYearTest{y}"
             self.saveFig(fig, filename)
             plt.close(fig)
 
-            nestedSet(self.plotPaths, ["years", f"{y}", "year"], filename)
+            # nestedSet(self.plotPaths, ["years", f"{y}", "year"], filename)
 
     def plotCategoriesYearly(self, transactions):
         df = transactions
@@ -268,6 +334,10 @@ class Ecoplot:
 
         years = yearTrans.index
         for y in years:
+            ref = PlotRef(self.plotDir, PlotType.CATEGORY, y)
+            self.reg.append(ref)
+            filename = ref.path
+
             fig = plt.figure()
             ax = fig.add_subplot(111)
             yearSelected = yearTrans.loc[y, :]
@@ -275,11 +345,8 @@ class Ecoplot:
             yearSelected.plot.barh(y="value", ax=ax)
             plt.xlabel("summation / EUR")
             plt.ylabel("")
-            filename = Path(self.plotDir) / f"ecoNettoHbar{y}"
             self.saveFig(fig, filename)
             plt.close(fig)
-
-            nestedSet(self.plotPaths, ["years", f"{y}", "categories"], filename)
 
     def plotCategoriesRatioMonthly(self, transactions):
         """Calculate ratio of monthly expense and create line plot for each month"""
@@ -297,6 +364,10 @@ class Ecoplot:
 
         legendCreated = False
         for year in years:
+            ref = PlotRef(self.plotDir, PlotType.CATEGORY_RATIO, year)
+            self.reg.append(ref)
+            filename = ref.path
+
             transInYear = monthTrans[f"{year}-01-01":f"{year}-12-31"]
             selector = (transInYear.columns != "income") & (
                 transInYear.columns != "saving"
@@ -313,13 +384,14 @@ class Ecoplot:
             plt.ylabel("value / EUR")
             plt.xlabel("")
 
-            filename = Path(self.plotDir) / f"ecoMonth{year}"
             self.saveFig(fig, filename)
             plt.close(fig)
 
-            nestedSet(self.plotPaths, ["years", f"{year}", "monthly"], filename)
-
             if not legendCreated:
+                ref = PlotRef(self.plotDir, PlotType.CATEGORY_RATIO_LEGEND, "LEGEND")
+                self.reg.append(ref)
+                filename = ref.path
+
                 handles, labels = ax.get_legend_handles_labels()
 
                 legFig = plt.figure()
@@ -332,13 +404,9 @@ class Ecoplot:
                 ] / 72
                 height = (bb.y1 - bb.y0) / 100
 
-                filename = Path(self.plotDir) / "ecoMonth_Legend"
                 self.saveFig(legFig, filename, width=width, height=height)
                 plt.close(legFig)
                 legendCreated = True
-                nestedSet(
-                    self.plotPaths, ["years", f"{year}", "monthly_legend"], filename
-                )
 
     def plotCategoriesMonthly(self, transactions):
         df = transactions
@@ -354,12 +422,12 @@ class Ecoplot:
         monthTrans.index = pd.to_datetime(monthTrans.index)
 
         for year in years:
+            ref = PlotRef(self.plotDir, PlotType.CATEGORY_MONTHS, year)
+            self.reg.append(ref)
+            filename = ref.path
+
             transInYear = monthTrans[f"{year}-01-01":f"{year}-12-31"]
 
-            """
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            """
             axes = transInYear.plot.bar(subplots=True, legend=False, rot=45)
             fig = axes[0].get_figure()
             # clearing axis tick labels
@@ -384,11 +452,8 @@ class Ecoplot:
 
             plt.subplots_adjust(top=0.90)
 
-            filename = Path(self.plotDir) / f"ecoCat_{year}"
             self.saveFig(fig, filename, 8, 11, True)
             plt.close(fig)
-
-            nestedSet(self.plotPaths, ["years", f"{year}", "monthlyCat"], filename)
 
     def plotCategoriesFlow(self, transactions: pd.DataFrame):
         df = transactions
@@ -401,12 +466,17 @@ class Ecoplot:
             catData = catData.iloc[::-1]
             catData = catData["value"].cumsum()
             catDatas[cat] = catData
+        # print(catDatas)
 
-        catDatas = {
-            k: v for k, v in sorted(catDatas.items(), key=lambda item: item[1][-1])
-        }
+        # catDatas = {
+        #     k: v for k, v in sorted(catDatas.items(), key=lambda item: item.iloc[-1])
+        # }
 
         for cat, catData in catDatas.items():
+            ref = PlotRef(self.plotDir, PlotType.CATEGORY_FLOW, cat)
+            self.reg.append(ref)
+            filename = ref.path
+
             fig = plt.figure()
             ax = fig.add_subplot(111)
 
@@ -415,14 +485,11 @@ class Ecoplot:
             plt.ylabel("value / EUR")
             plt.xticks(rotation=45)
             plt.title(cat)
-            filename = Path(self.plotDir) / f"ecoCat_{cat}"
             self.saveFig(fig, filename)
             plt.close(fig)
 
-            nestedSet(self.plotPaths, ["flow", cat], filename)
-
-        def plotCategoriesPerMonth(self, transactions):
-            pass
+    def plotCategoriesPerMonth(self, transactions):
+        pass
 
     def sankeyPlot(self, transactions: pd.DataFrame):
         import plotly.graph_objects as go
@@ -430,8 +497,11 @@ class Ecoplot:
         years = list(set(transactions["date"].dt.year))
 
         for year in years:
+            ref = PlotRef(self.plotDir, PlotType.SANKEY, year)
+            self.reg.append(ref)
+            filename = ref.path
+
             check = year == transactions["date"].dt.year
-            print(check)
             yearSlice = transactions[check]
 
             income = yearSlice[transactions["value"] > 0]
@@ -445,19 +515,24 @@ class Ecoplot:
             sumId = len(incomeGroups)
             for i, id in enumerate(incomeGroups):
                 sel = income[income["groupID"] == id]
-                labels.append(id)
+
+                groupValue = sel["value"].sum()
+                labels.append(f"{id}: {groupValue:.2f}")
                 source.append(i)
                 target.append(sumId)
-                value.append(sel["value"].sum())
-            labels.append("total")
+                value.append(groupValue)
+            totalBudget = sum(value)
+            labels.append(f"total: {totalBudget:.2f}")
 
             outGroups = set(out["groupID"])
             for i, id in enumerate(outGroups):
-                labels.append(id)
                 sel = out[out["groupID"] == id]
+
+                groupValue = abs(sel["value"].sum())
+                labels.append(f"{id}: {groupValue:.2f}")
                 source.append(sumId)
                 target.append(sumId + 1 + i)
-                value.append(abs(sel["value"].sum()))
+                value.append(groupValue)
 
             fig = go.Figure(
                 data=[
@@ -474,6 +549,5 @@ class Ecoplot:
                 ]
             )
 
-            fig.update_layout(title_text=f"Sankey Diagram {year}", font_size=10)
-            filename = Path(self.plotDir) / f"sankey_{year}.pdf"
+            fig.update_layout(title_text="", font_size=10)
             fig.write_image(filename)

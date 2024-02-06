@@ -6,6 +6,10 @@ from pylatex import Tabularx, Package, Center, Table
 from pylatex.basic import Environment
 from pylatex.base_classes import CommandBase
 from itertools import islice
+from typing import List
+from collections import OrderedDict
+
+from econicer.ecoplot import PlotRef, PlotType, OVERALL_TAG
 
 tex.table.COLUMN_LETTERS.update({"R"})
 
@@ -21,10 +25,11 @@ class Landscape(Environment):
 
 
 class ReportDocument:
-    def __init__(self, name, number, bank):
+    def __init__(self, name, number, bank, reg: List[PlotRef]):
         self.name = name
         self.number = number
         self.bank = bank
+        self.register = reg
 
         geometry_options = {
             "tmargin": "35mm",
@@ -98,57 +103,84 @@ class ReportDocument:
 
         return fig
 
-    def addOverallSection(self, plotPaths):
+    def addOverallSection(self):
         """Define plots for the overall section"""
 
         title = "Overall Financial Report"
         text = "Report for all available years."
 
-        overallPlots = {
-            "timeline": "Account saldo total timeline",
-            "years": "Yearly income and expenses",
-            "pie_income": "Income distribution by category",
-            "pie_outgoing": "Expenses distribution by category",
-            "hbar_outgoing": "Summation of expenses by category",
-            "hbar_incoming": "Summation of incomings by category",
-        }
+        overallPlots = OrderedDict(
+            {
+                PlotType.TIMELINE: "Account balance total timeline",
+                PlotType.BAR: "Yearly income and expenses",
+                PlotType.PIE_IN: "Income distribution by category",
+                PlotType.PIE_OUT: "Expenses distribution by category",
+                PlotType.HBAR_IN: "Summation of expenses by category",
+                PlotType.HBAR_OUT: "Summation of incomings by category",
+            }
+        )
 
-        self.addSection(title, text, overallPlots, plotPaths)
+        self.addSection(
+            title, text, plotContext=OVERALL_TAG, plotSelection=overallPlots
+        )
         self.doc.append(tex.Command("newpage"))
 
-    def addSection(self, title, text="", plotDict={}, plotPaths={}):
+    def addSection(self, title, text="", plotContext="", plotSelection={}):
         with self.doc.create(tex.Section(title)):
             if text:
                 self.doc.append(text)
 
+            plots = []
+            filteredReg = {
+                ref.type: ref for ref in self.register if ref.context == plotContext
+            }
+            for pt in plotSelection.keys():
+                ref = filteredReg[pt]
+                plots.append(ref)
+
             with self.doc.create(tex.Figure(position="h!")) as fig:
-                for i, (plotName, cap) in enumerate(plotDict.items()):
-                    subplot = self.createFig(plotPaths[plotName], cap)
+                for i, ref in enumerate(plots):
+                    plotArgs = plotSelection[ref.type]
+                    if isinstance(plotArgs, dict):
+                        subplot = self.createFig(ref.path, **plotArgs)
+                    else:
+                        subplot = self.createFig(ref.path, plotArgs)
                     fig.append(subplot)
 
                     if (i + 1) % 2 == 0:
                         self.doc.append(tex.LineBreak())
 
-    def addYearlyReports(self, plotPaths, transactions):
-        for i, (year, paths) in enumerate(plotPaths.items()):
-            self.addYearSection(year, paths, transactions)
+    def addYearlyReports(self, transactions):
+        years = {v.context for v in self.register if isinstance(v.context, int)}
+        years = list(years)
+        print(years)
+        for i, year in enumerate(years):
+            self.addYearSection(year, transactions)
 
             if (i + 1) % 2 == 0:
                 self.doc.append(tex.Command("newpage"))
 
-    def addYearSection(self, year, plotPaths, transactions):
+    def addYearSection(self, year, transactions):
         """Define plots for the yearly section"""
 
         title = f"Financial Report {year}"
 
-        plots = {
-            "year": "Monthly income and expenses",
-            "categories": "Summation of expenses by category for this year",
-        }
+        plots = OrderedDict(
+            {
+                PlotType.BAR: "Monthly income and expenses",
+                PlotType.CATEGORY: "Summation of expenses by category for this year",
+                PlotType.SANKEY: {
+                    "caption": "Income and expense balance diagram",
+                    "width": tex.NoEscape(r"\linewidth"),
+                },
+            }
+        )
 
-        self.addSection(title, plotDict=plots, plotPaths=plotPaths)
+        self.addSection(title, plotContext=year, plotSelection=plots)
 
         categories = list(set(transactions["groupID"]))
+        # somehow nan shows up?
+        categories.remove(np.nan)
 
         # add table
         monthTrans = pd.pivot_table(
@@ -202,12 +234,14 @@ class ReportDocument:
                     tabular.add_hline()
                 table.add_caption(f"Category overview for year {year}")
 
-    def addFlowSection(self, plotPaths):
+    def addFlowSection(self):
         """Define plots for the yearly section"""
 
         title = "Category Flow"
 
-        plots = {k: f"Spending history of '{k}'" for k in plotPaths.keys()}
+        categories = []
+
+        plots = {k: f"Spending history of '{k}'" for k in categories}
 
         # self.addSection(title, plotDict=plots, plotPaths=plotPaths)
         newpage = False

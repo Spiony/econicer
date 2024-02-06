@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from econicer.account import BankAccount
-from econicer.ecoplot import Ecoplot
+from econicer.ecoplot import EcoPlot
 from econicer.fileIO import FileIO
 from econicer.report import ReportDocument
 from econicer.settings import BankFileSettings
@@ -171,11 +171,12 @@ class AccountManager:
         transactions["value"] = transactions["value"] / 100
         transactions["saldo"] = transactions["saldo"] / 100
 
-        ep = Ecoplot(str(plotDir))
+        ep = EcoPlot(plotDir)
         """
         ep.plotCategoriesRatioMonthly(transactions)
         ep.plotCategoriesMonthly(transactions)
         """
+        ep.plotCategoriesFlow(transactions)
         ep.sankeyPlot(transactions)
         ep.plotHbarSplit(transactions)
         ep.plotTimeline(transactions)
@@ -185,9 +186,8 @@ class AccountManager:
         ep.plotBarsYearly(transactions, self.groupSettings.groupTypes)
         ep.plotCategoriesYearly(transactions)
 
-        ep.plotCategoriesFlow(transactions)
-
-        self.plotPaths = ep.plotPaths
+        # self.plotPaths = ep.plotPaths
+        return ep.reg
 
     def calculateStatistics(self):
         self.statistics = {}
@@ -195,17 +195,19 @@ class AccountManager:
         # yearly average value for each category
 
     def createReport(self):
-        self.createPlots()
+        reg = self.createPlots()
         self.calculateStatistics()
 
         rp = ReportDocument(
-            self.account.owner, self.account.accountNumber, self.account.bank
+            self.account.owner, self.account.accountNumber, self.account.bank, reg
         )
-        rp.addOverallSection(self.plotPaths["overall"])
+        rp.addOverallSection()
         rp.addStatisticsSection(self.statistics)
+
         transactions = self.account.transactions.copy()
         transactions["value"] = transactions["value"] / 100
         transactions["saldo"] = transactions["saldo"] / 100
-        rp.addYearlyReports(self.plotPaths["years"], transactions)
-        rp.addFlowSection(self.plotPaths["flow"])
+        rp.addYearlyReports(transactions)
+        rp.addFlowSection()
+
         rp.generatePDF()
