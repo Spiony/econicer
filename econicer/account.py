@@ -112,7 +112,7 @@ class BankAccount:
                 for id in ids:
                     data = self.transactions.loc[id]
                     trans = f'{data["customer"]} \'{data["usage"]}\' {data["value"]} ({data["valuta"]})'
-                    logger.info(f"Match {trans} to group: {grpName}")
+                    logger.info(f"Match '{trans}' to group: '{grpName}'")
 
         addIdentifier(self.transactions)
 
